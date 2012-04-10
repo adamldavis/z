@@ -22,6 +22,12 @@ import com.adamldavis.z.api.DependencyManager;
 
 public class MavenDependencyManager implements DependencyManager {
 
+	public static final String DEPENDENCY = "dependency";
+
+	public static final String ARTIFACT_ID = "artifactId";
+
+	public static final String GROUP_ID = "groupId";
+
 	@Override
 	public String getStandardFileName() {
 		return "pom.xml";
@@ -87,9 +93,9 @@ public class MavenDependencyManager implements DependencyManager {
 
 		for (int i = 0; i < dependencyNodes.getLength(); i++) {
 			Node dep = dependencyNodes.item(i);
-			if ("dependency".equals(dep.getNodeName())) {
-				final String groupId = getNodeContent("groupId", dep);
-				final String artifaceId = getNodeContent("artifaceId", dep);
+			if (DEPENDENCY.equals(dep.getNodeName())) {
+				final String groupId = getNodeContent(GROUP_ID, dep);
+				final String artifaceId = getNodeContent(ARTIFACT_ID, dep);
 				final String version = getNodeContent("version", dep);
 
 				list.add(new ZNode(ZNodeType.MODULE, artifaceId, groupId + " "
