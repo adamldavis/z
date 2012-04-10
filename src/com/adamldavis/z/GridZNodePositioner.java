@@ -6,18 +6,22 @@ public class GridZNodePositioner extends AbstractZNodePositioner {
 
 	@Override
 	protected Point2D getDependencyPosition(ZNode node, int index, int size) {
-		float x = 1 / (size + 1.0f) + index / ((float) size);
-		float y = 0.1f;
+		float x = -0.8f;
+		return getPosition(index, size, x);
+	}
 
-		return new Point2D.Float(x, y);
+	private Point2D getPosition(int index, int size, float x) {
+		int maxSize = 8;
+		int smin = Math.min(maxSize, size), imod = index % maxSize;
+		float y = 1 / (smin + 1.0f) + imod / (smin + 1.0f);
+
+		return new Point2D.Float(x * (1f - (index / maxSize) / 4f), 2f * y - 1f);
 	}
 
 	@Override
 	protected Point2D getSubmodulePosition(ZNode node, int index, int size) {
-		float x = 1 / (size + 1.0f) + index / ((float) size);
-		float y = 0.9f;
-
-		return new Point2D.Float(x, y);
+		float x = 0.8f;
+		return getPosition(index, size, x);
 	}
 
 }
