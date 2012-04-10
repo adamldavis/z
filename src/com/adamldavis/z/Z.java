@@ -72,6 +72,8 @@ public class Z extends Display2d {
 
 	SortOrder order = SortOrder.DEFAULT;
 
+	UserSettings settings = new UserSettings();
+
 	ZNode menu = new ZNode(100, 100, "MENU");
 	{
 		menu.zNodeType = ZNodeType.METHOD;
@@ -86,11 +88,14 @@ public class Z extends Display2d {
 				clicked(selectedNode);
 			}
 			zMenu.setVisible(false);
+			saveSettings();
 		}
 	});
 
 	public Z() {
 		super(false, 2, 33);
+
+		loadSettings();
 
 		this.addMouseMotionListener(new MouseMotionAdapter() {
 
@@ -167,6 +172,28 @@ public class Z extends Display2d {
 		});
 	}
 
+	private void loadSettings() {
+		if (settings.getProperty(UserSettings.DIRECTION) != null) {
+			direction = Direction.valueOf(settings
+					.getProperty(UserSettings.DIRECTION));
+			nodeLayout = NodeLayout.valueOf(settings
+					.getProperty(UserSettings.LAYOUT));
+			order = SortOrder.valueOf(settings.getProperty(UserSettings.ORDER));
+		}
+		if (settings.getProperty(UserSettings.LAST_LOCATION) != null) {
+			selectedNode = new ZCodeLoader(apiFactory).load(settings
+					.getFile(UserSettings.LAST_LOCATION));
+			clicked(selectedNode);
+		}
+	}
+
+	public void saveSettings() {
+		settings.setProperty(UserSettings.DIRECTION, direction.toString());
+		settings.setProperty(UserSettings.LAYOUT, nodeLayout.toString());
+		settings.setProperty(UserSettings.ORDER, order.toString());
+		settings.save();
+	}
+
 	protected void dragged(ZNode z) {
 		System.out.println("dragged: " + z);
 		// create dependency on z?
@@ -234,7 +261,7 @@ public class Z extends Display2d {
 
 	final List<ZNode> zNodes = new ArrayList<ZNode>();
 
-	float size = 100;
+	float size = 80;
 
 	@Override
 	protected void paintBuffered(Graphics2D g2d) {
