@@ -32,7 +32,9 @@ public class ZMenu extends JFrame {
 				chooser.showOpenDialog(z);
 
 				File file = chooser.getSelectedFile();
-				z.selectedNode = new ZCodeLoader(z.apiFactory).load(file);
+				if (file != null) {
+					z.selectedNode = new ZCodeLoader(z.apiFactory).load(file);
+				}
 				actionListener.actionPerformed(e);
 			}
 		});
