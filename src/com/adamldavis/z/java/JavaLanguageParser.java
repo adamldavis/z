@@ -26,6 +26,8 @@ public class JavaLanguageParser implements LanguageParser {
 		final File file = new File("src/com/adamldavis/z/ZNode.java");
 		System.out.println(file.getAbsolutePath());
 		System.out.println(j.getMethods(file));
+
+		System.out.println(j.getNonMethodPart(file));
 	}
 
 	@Override
@@ -40,7 +42,7 @@ public class JavaLanguageParser implements LanguageParser {
 				"void", "null", "if", "else", "while", "for", "do", "true",
 				"false", "enum", "static", "transient", "volatile", "package",
 				"switch", "default", "boolean", "byte", "int", "float",
-				"double", "char");
+				"double", "char", "long");
 	}
 
 	@Override
@@ -94,7 +96,8 @@ public class JavaLanguageParser implements LanguageParser {
 					braceDepth--;
 					if (braceDepth == 1) { // end of method or inner-class
 						if (inMethod) {
-							methods.get(methods.size() - 1).code = toMethodName(code);
+							methods.get(methods.size() - 1).code = code
+									.toString();
 							inMethod = false;
 						}
 						code.setLength(0);
@@ -110,7 +113,7 @@ public class JavaLanguageParser implements LanguageParser {
 				}
 			}
 		} catch (IOException e) {
-			e.printStackTrace();
+			throw new RuntimeException(e);
 		} finally {
 			if (reader != null) {
 				try {
@@ -171,6 +174,69 @@ public class JavaLanguageParser implements LanguageParser {
 		} else {
 			return isMethodSigFindBracket(code, i + 1);
 		}
+	}
+
+	@Override
+	public String getNonMethodPart(File file) {
+		FileReader reader = null;
+		boolean inMethod = false;
+		int braceDepth = 0;
+		final StringBuilder code = new StringBuilder();
+		int i = 0;
+
+		try {
+			reader = new FileReader(file);
+			final BufferedReader br = new BufferedReader(reader);
+
+			while (true) {
+				final String line = br.readLine();
+				if (line == null) {
+					break; // EOF
+				} else if (line.startsWith(getImportKeyword())) {
+					continue;
+				}
+				if (line.contains("{")) {
+					braceDepth++;
+					if (braceDepth == 1) { // class begins
+						i = code.length() + line.length();
+					}
+				}
+				if (line.contains("}")) {
+					braceDepth--;
+					if (braceDepth == 1) { // end of method or inner-class
+						if (inMethod) {
+							inMethod = false;
+							continue;
+						} else {
+							i = code.length() + line.length();
+						}
+					}
+				}
+				if (!inMethod) {
+					code.append(line).append('\n');
+
+					if (braceDepth >= 1
+							&& isMethodSig(code.subSequence(i, code.length()))) {
+						inMethod = true;
+						code.setLength(i);
+					}
+					if (line.trim().endsWith(";")) {
+						i = code.length();
+					}
+				}
+			}
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		} finally {
+			if (reader != null) {
+				try {
+					reader.close();
+				} catch (IOException e) {
+					throw new RuntimeException("Error closing file: " + e);
+				}
+			}
+		}
+		return code.toString();
 	}
 
 }

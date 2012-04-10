@@ -153,6 +153,11 @@ public class ZCodeLoader {
 			node.extension = name.substring(name.lastIndexOf('.') + 1);
 			node.name = name.substring(0, name.lastIndexOf('.'));
 		}
+		if (!getPackage) {
+			node.code = languageParser.getNonMethodPart(file);
+			node.code = codeFormatter.format(node.code);
+			return node;
+		}
 		FileReader reader = null;
 
 		try {
@@ -176,17 +181,16 @@ public class ZCodeLoader {
 					node.extension = "";
 					return node;
 				}
-				node.code += line + "\n";
 			}
-			node.code = codeFormatter.format(node.code);
 		} catch (IOException e) {
-			e.printStackTrace();
+			throw new RuntimeException(e);
 		} finally {
 			if (reader != null) {
 				try {
 					reader.close();
 				} catch (IOException e) {
 					System.err.println("Error closing file: " + e);
+					throw new RuntimeException(e);
 				}
 			}
 		}

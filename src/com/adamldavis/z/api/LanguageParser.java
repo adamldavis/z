@@ -17,6 +17,8 @@ public interface LanguageParser {
 
 	List<ZNode> getMethods(File file);
 
+	String getNonMethodPart(File file);
+
 	boolean requiresSemicolon();
 
 	boolean usesBraces();
