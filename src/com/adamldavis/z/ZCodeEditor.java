@@ -1,7 +1,6 @@
 package com.adamldavis.z;
 
 import java.awt.BorderLayout;
-import java.awt.Component;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 
@@ -15,7 +14,7 @@ public class ZCodeEditor extends JFrame {
 
 	private static final long serialVersionUID = 1L;
 
-	final Component editor = new JEditorPane("text", "");
+	final JEditorPane editor;
 
 	private ZNode zNode;
 
@@ -23,6 +22,8 @@ public class ZCodeEditor extends JFrame {
 
 	public ZCodeEditor(ZNode zNode, APIFactory apiFactory) {
 		super("Z code editor:" + zNode);
+		editor = new JEditorPane("text/plain", apiFactory.getCodeFormatter()
+				.format(zNode.code));
 		JScrollPane scrollPane = new JScrollPane(editor);
 		this.getRootPane().setLayout(new BorderLayout());
 		this.getRootPane().add(scrollPane);
@@ -50,6 +51,7 @@ public class ZCodeEditor extends JFrame {
 
 	public void save() {
 		System.out.println("Saving: " + zNode);
+		zNode.code = editor.getText();
 		new ZCodeSaver(apiFactory).save(zNode);
 	}
 }
