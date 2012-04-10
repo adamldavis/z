@@ -59,7 +59,7 @@ public class Z extends Display2d {
 		new Z();
 	}
 
-	private final APIFactory apiFactory = new JavaFactory();
+	final APIFactory apiFactory = new JavaFactory();
 
 	/* Mouse points on screen. */
 	Point point1, point2;
@@ -183,7 +183,7 @@ public class Z extends Display2d {
 
 	protected void clicked(ZNode z) {
 		System.out.println("selected: " + z);
-		selectedNode = z;
+		selectedNode = new ZCodeLoader(apiFactory).load(z);
 		zNodes.clear();
 		zNodes.add(selectedNode);
 		zNodes.addAll(selectedNode.dependencies);

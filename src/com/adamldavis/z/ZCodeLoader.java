@@ -105,6 +105,8 @@ public class ZCodeLoader {
 	/** Load a module, package or class. */
 	public ZNode load(ZNode node) {
 
+		node.submodules.clear();
+
 		switch (node.zNodeType) {
 
 		case CLASS:

@@ -2,7 +2,9 @@ package com.adamldavis.z;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
 
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
@@ -15,9 +17,33 @@ public class ZMenu extends JFrame {
 
 	public ZMenu(final Z z, final ActionListener actionListener) {
 		super("Menu");
+
+		final JMenu fileMenu = new JMenu("File");
 		final JMenu sorting = new JMenu("Sorting");
 		final JMenu layout = new JMenu("Layout");
 		
+		fileMenu.add("Open...").addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				final JFileChooser chooser = new JFileChooser();
+				chooser.setDialogTitle("Open file or project folder");
+				chooser.setMultiSelectionEnabled(false);
+				chooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
+				chooser.showOpenDialog(z);
+
+				File file = chooser.getSelectedFile();
+				z.selectedNode = new ZCodeLoader(z.apiFactory).load(file);
+				actionListener.actionPerformed(e);
+			}
+		});
+		fileMenu.add("Save").addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				new ZCodeSaver(z.apiFactory).save(z.selectedNode);
+				actionListener.actionPerformed(e);
+			}
+		});
+
 		sorting.add("Default").addActionListener(
 				new ActionListener() {
 					@Override
@@ -77,6 +103,7 @@ public class ZMenu extends JFrame {
 				});
 
 		JMenuBar bar = new JMenuBar();
+		bar.add(fileMenu);
 		bar.add(sorting);
 		bar.add(layout);
 		super.setJMenuBar(bar);

@@ -64,14 +64,20 @@ public class ZNode {
 			g2d.drawRect(x, y, isize, (int) (isize * 0.75));
 			break;
 		case MODULE:
-			g2d.fillOval(x, y, isize, isize);
+			g2d.drawOval(x, y, isize, isize);
 			break;
 		case PACKAGE:
-			g2d.fillOval(x, y, isize, (int) (isize * 0.75));
+			g2d.drawOval(x, y, isize, (int) (isize * 0.75));
 			break;
 		}
 		g2d.setFont(g2d.getFont().deriveFont(14f));
-		g2d.drawString(name, x - 1, y - 1);
+		if (name != null) {
+			g2d.drawString(name, x - 1, y - 1);
+		}
+		if (code != null) {
+			g2d.drawString(code.substring(0, Math.min(code.length(), 30)),
+					x + 10, y + 10);
+		}
 	}
 
 	void drawLines(Graphics2D g2d) {
