@@ -37,10 +37,12 @@ public class ZCodeSaver {
 			save(new File(zNode.directory, zNode.name + "." + zNode.extension),
 					zNode.code.getBytes());
 		case PACKAGE:
-			save(new File(zNode.directory, "package-info.java"),
+			save(new File(zNode.directory, languageParser.getPackageFilename()),
 					zNode.code.getBytes());
 		case MODULE:
 			// TODO: save pom.xml
+		case METHOD:
+			// TODO: save only the changes
 		}
 	}
 

@@ -4,10 +4,13 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileReader;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+
+import org.apache.commons.io.FileUtils;
 
 import com.adamldavis.z.ZNode.ZNodeType;
 import com.adamldavis.z.api.APIFactory;
@@ -79,7 +82,7 @@ public class ZCodeLoader {
 				String ext = name.substring(name.lastIndexOf(".") + 1);
 				if (languageParser.getValidFileExtensions().contains(
 						ext.toLowerCase())) {
-					nodes.add(loadFile(file, true));
+					nodes.add(loadPackage(file));
 					break;
 				}
 			}
@@ -90,6 +93,26 @@ public class ZCodeLoader {
 			}
 		}
 		return nodes;
+	}
+
+	private ZNode loadPackage(File file) {
+		final ZNode node = loadFile(file, true);
+
+		for (File packageInfo : file.getParentFile().listFiles(
+				new FilenameFilter() {
+					@Override
+					public boolean accept(File dir, String name) {
+						return name.equals(languageParser.getPackageFilename());
+					}
+				})) {
+			node.setLastModified(packageInfo.lastModified());
+			try {
+				node.code = FileUtils.readFileToString(packageInfo);
+			} catch (IOException e) {
+				throw new RuntimeException(e);
+			}
+		}
+		return node;
 	}
 
 	/** load Directory as a Module. */

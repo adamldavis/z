@@ -13,6 +13,7 @@ import com.adamldavis.z.ZNode;
 import com.adamldavis.z.ZNode.ZNodeType;
 import com.adamldavis.z.api.LanguageParser;
 
+/** Used for Java 5. */
 public class JavaLanguageParser implements LanguageParser {
 
 	public static void main(String[] args) {
@@ -237,6 +238,11 @@ public class JavaLanguageParser implements LanguageParser {
 			}
 		}
 		return code.toString();
+	}
+
+	@Override
+	public String getPackageFilename() {
+		return "package-info.java";
 	}
 
 }
