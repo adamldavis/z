@@ -70,11 +70,12 @@ public class ZNode {
 			g2d.drawOval(x, y, isize, (int) (isize * 0.75));
 			break;
 		}
-		g2d.setFont(g2d.getFont().deriveFont(14f));
 		if (name != null) {
+			g2d.setFont(g2d.getFont().deriveFont(14f));
 			g2d.drawString(name, x - 1, y - 1);
 		}
 		if (code != null) {
+			g2d.setFont(g2d.getFont().deriveFont(10f));
 			g2d.drawString(code.substring(0, Math.min(code.length(), 30)),
 					x + 10, y + 10);
 		}
