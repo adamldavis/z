@@ -25,6 +25,8 @@ import javax.swing.SwingUtilities;
 import com.adamldavis.swing.Display2d;
 import com.adamldavis.z.SmoothAnimator.AnimationType;
 import com.adamldavis.z.ZNode.ZNodeType;
+import com.adamldavis.z.api.APIFactory;
+import com.adamldavis.z.java.JavaFactory;
 
 /**
  * @author Adam Davis
@@ -56,6 +58,8 @@ public class Z extends Display2d {
 	public static void main(String[] args) {
 		new Z();
 	}
+
+	private final APIFactory apiFactory = new JavaFactory();
 
 	/* Mouse points on screen. */
 	Point point1, point2;
@@ -111,7 +115,8 @@ public class Z extends Display2d {
 						clicked(z);
 					} else {
 						// new code editor
-						ZCodeEditor editor = new ZCodeEditor(selectedNode);
+						ZCodeEditor editor = new ZCodeEditor(selectedNode,
+								apiFactory);
 						editor.setSize(width / 2, height / 2);
 						editor.setLocation(width / 4, height / 4);
 					}

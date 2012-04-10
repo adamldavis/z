@@ -9,9 +9,7 @@ import javax.swing.JEditorPane;
 import javax.swing.JFrame;
 import javax.swing.JScrollPane;
 
-import com.adamldavis.z.api.LanguageParser;
-import com.adamldavis.z.java.JavaCodeFormatter;
-import com.adamldavis.z.java.JavaLanguageParser;
+import com.adamldavis.z.api.APIFactory;
 
 public class ZCodeEditor extends JFrame {
 
@@ -21,9 +19,9 @@ public class ZCodeEditor extends JFrame {
 
 	private ZNode zNode;
 
-	LanguageParser parser = new JavaLanguageParser();
+	private final APIFactory apiFactory;
 
-	public ZCodeEditor(ZNode zNode) {
+	public ZCodeEditor(ZNode zNode, APIFactory apiFactory) {
 		super("Z code editor:" + zNode);
 		JScrollPane scrollPane = new JScrollPane(editor);
 		this.getRootPane().setLayout(new BorderLayout());
@@ -31,6 +29,7 @@ public class ZCodeEditor extends JFrame {
 		this.setAlwaysOnTop(true);
 		this.setVisible(true);
 		this.zNode = zNode;
+		this.apiFactory = apiFactory;
 		editor.requestFocus();
 		editor.addKeyListener(new KeyListener() {
 
@@ -51,8 +50,6 @@ public class ZCodeEditor extends JFrame {
 
 	public void save() {
 		System.out.println("Saving: " + zNode);
-		// TODO: allow changing of formatter:
-
-		new ZCodeSaver(new JavaCodeFormatter()).save(zNode);
+		new ZCodeSaver(apiFactory).save(zNode);
 	}
 }

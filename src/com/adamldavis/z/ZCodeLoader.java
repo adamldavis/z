@@ -10,6 +10,7 @@ import java.util.Collection;
 import java.util.List;
 
 import com.adamldavis.z.ZNode.ZNodeType;
+import com.adamldavis.z.api.APIFactory;
 import com.adamldavis.z.api.CodeFormatter;
 import com.adamldavis.z.api.DependencyManager;
 import com.adamldavis.z.api.LanguageParser;
@@ -21,6 +22,11 @@ public class ZCodeLoader {
 	DependencyManager dependencyManager;
 
 	LanguageParser languageParser;
+
+	public ZCodeLoader(APIFactory apiFactory) {
+		this(apiFactory.getCodeFormatter(), apiFactory.getDependencyManager(),
+				apiFactory.getLanguageParser());
+	}
 
 	public ZCodeLoader(CodeFormatter codeFormatter,
 			DependencyManager dependencyManager, LanguageParser languageParser) {
