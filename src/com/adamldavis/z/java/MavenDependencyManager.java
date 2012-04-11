@@ -74,8 +74,10 @@ public class MavenDependencyManager implements DependencyManager {
 
 		for (Node child = dep.getFirstChild(); child != null; child = child
 				.getNextSibling()) {
-			builder.append(child.getNodeName() + "=" + child.getTextContent())
-					.append('\n');
+			if (child instanceof Element) {
+				builder.append(child.getNodeName()).append('=')
+						.append(child.getTextContent()).append('\n');
+			}
 		}
 		return builder.toString();
 	}
@@ -205,22 +207,22 @@ public class MavenDependencyManager implements DependencyManager {
 			}
 			final Node deps = depsList.item(0);
 			final NodeList dependencyNodes = deps.getChildNodes();
-			boolean found = false;
+			Node dependency = null;
 
 			for (int i = 0; i < dependencyNodes.getLength(); i++) {
-				final Node dep = dependencyNodes.item(i);
+				final Node item = dependencyNodes.item(i);
 
-				if (DEPENDENCY.equals(dep.getNodeName())) {
-					final String artifaceId = getNodeContent(ARTIFACT_ID, dep);
-					if (zNode.name.equals(artifaceId)) {
-						deps.replaceChild(dep, unflatten(doc, zNode.code));
-						found = true;
+				if (DEPENDENCY.equals(item.getNodeName())) {
+					if (zNode.name.equals(getNodeContent(ARTIFACT_ID, item))) {
+						dependency = item;
 						break;
 					}
 				}
 			}
-			if (!found) {
+			if (dependency == null) {
 				deps.appendChild(unflatten(doc, zNode.code));
+			} else {
+				deps.replaceChild(unflatten(doc, zNode.code), dependency);
 			}
 			fis.close();
 			saveXML(file, doc);
@@ -239,6 +241,7 @@ public class MavenDependencyManager implements DependencyManager {
 
 	@SuppressWarnings("deprecation")
 	private void saveXML(final File file, Document doc) throws IOException {
+		doc.setStrictErrorChecking(false);
 		OutputFormat format = new OutputFormat(doc);
 		format.setPreserveSpace(true);
 		format.setIndenting(true);
@@ -258,7 +261,10 @@ public class MavenDependencyManager implements DependencyManager {
 			String key = line.substring(0, line.indexOf('='));
 			Element child = doc.createElement(key);
 			child.setTextContent(line.substring(line.indexOf('=') + 1));
+			node.appendChild(doc.createTextNode("\n\t\t\t"));
 			node.appendChild(child);
+			if (line.equals(lines[lines.length - 1]))
+				node.appendChild(doc.createTextNode("\n\t\t"));
 		}
 		return node;
 	}
