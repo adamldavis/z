@@ -15,6 +15,7 @@ import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -29,6 +30,8 @@ import com.adamldavis.z.api.APIFactory;
 import com.adamldavis.z.java.JavaFactory;
 
 /**
+ * Main Window and Main class of Z program.
+ * 
  * @author Adam Davis
  * 
  */
@@ -204,7 +207,7 @@ public class Z extends Display2d {
 
 	AtomicInteger aniCount = new AtomicInteger(0);
 
-	Map<ZNode, Point2D> pointMap;
+	final Map<ZNode, Point2D> pointMap = new HashMap<ZNode, Point2D>();
 
 	ZNodePositioner nodePositioner;
 
@@ -222,7 +225,7 @@ public class Z extends Display2d {
 		nodePositioner = new PixelZNodePositioner(new Dimension(width, height),
 				new DirectionZNodePositioner(direction, makeNodePositioner()));
 		sortNodes();
-		pointMap = nodePositioner.getNewPositions(selectedNode);
+		pointMap.putAll(nodePositioner.getNewPositions(selectedNode));
 	}
 
 	private void sortNodes() {
