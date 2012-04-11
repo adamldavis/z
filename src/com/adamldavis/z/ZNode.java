@@ -8,6 +8,12 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Module, Package, Class or Method.
+ * 
+ * @author Adam Davis
+ * 
+ */
 public class ZNode {
 
 	public enum ZNodeType {
@@ -20,8 +26,8 @@ public class ZNode {
 	public String name = "";
 	public String code = "";
 
-	String extension = "java";
-	public File directory = new File("./");
+	public String extension = "java";
+	public File parentFile = new File("./");
 
 	public final List<ZNode> dependencies = new ArrayList<ZNode>();
 	public final List<ZNode> submodules = new ArrayList<ZNode>();
@@ -50,6 +56,16 @@ public class ZNode {
 		this.lastModified = lastModified;
 	}
 
+	/**
+	 * Draws the node, name, and code.
+	 * 
+	 * @param g2d
+	 *            2D graphics to draw on.
+	 * @param size
+	 *            Size in pixels.
+	 * @param color
+	 *            Color to draw in.
+	 */
 	public void draw(Graphics2D g2d, float size, Color color) {
 		drawLines(g2d);
 		final int x = (int) (location.x - size * 0.5);

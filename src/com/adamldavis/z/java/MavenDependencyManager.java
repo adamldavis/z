@@ -121,7 +121,7 @@ public class MavenDependencyManager implements DependencyManager {
 								lastModified, list);
 
 						for (ZNode node : dependencies) {
-							node.directory = dependencyFile.getParentFile();
+							node.parentFile = dependencyFile.getParentFile();
 						}
 						return dependencies;
 					}
@@ -190,7 +190,7 @@ public class MavenDependencyManager implements DependencyManager {
 
 	@Override
 	public void save(ZNode zNode) {
-		final File file = new File(zNode.directory, getStandardFileName());
+		final File file = new File(zNode.parentFile, getStandardFileName());
 
 		try {
 			final DocumentBuilder docBuilder = DocumentBuilderFactory

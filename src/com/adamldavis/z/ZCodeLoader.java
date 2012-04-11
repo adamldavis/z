@@ -134,15 +134,19 @@ public class ZCodeLoader {
 
 		case CLASS:
 			final String filename = node.name + "." + node.extension;
-			final File file = new File(node.directory, filename);
+			final File file = new File(node.parentFile, filename);
+			final List<ZNode> methods = languageParser.getMethods(file);
 
-			node.submodules.addAll(languageParser.getMethods(file));
+			for (ZNode method : methods) {
+				method.parentFile = file;
+			}
+			node.submodules.addAll(methods);
 			break;
 		case MODULE:
-			node.submodules.addAll(loadPackages(node.directory));
+			node.submodules.addAll(loadPackages(node.parentFile));
 			break;
 		case PACKAGE:
-			node.submodules.addAll(loadClassFiles(node.directory));
+			node.submodules.addAll(loadClassFiles(node.parentFile));
 			break;
 		default: // do nothing
 		}
@@ -178,7 +182,7 @@ public class ZCodeLoader {
 		final String name = file.getName();
 		final ZNode node = new ZNode(ZNodeType.CLASS, name, "", "",
 				file.lastModified());
-		node.directory = file.getParentFile();
+		node.parentFile = file.getParentFile();
 
 		if (name.contains(".")) {
 			node.extension = name.substring(name.lastIndexOf('.') + 1);

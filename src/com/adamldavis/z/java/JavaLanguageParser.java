@@ -26,8 +26,13 @@ public class JavaLanguageParser implements LanguageParser {
 
 		final File file = new File("src/com/adamldavis/z/ZNode.java");
 		System.out.println(file.getAbsolutePath());
-		System.out.println(j.getMethods(file));
-
+		for (ZNode method : j.getMethods(file)) {
+			System.out.println("----------------METHOD--------------");
+			System.out.println("name=" + method.name);
+			System.out.println("ext=" + method.extension);
+			System.out.println(method.code);
+		}
+		System.out.println("----------------CLASS--------------");
 		System.out.println(j.getNonMethodPart(file));
 	}
 
@@ -78,12 +83,13 @@ public class JavaLanguageParser implements LanguageParser {
 		boolean inMethod = false;
 		int braceDepth = 0;
 		final StringBuilder code = new StringBuilder();
+		int methodStart = 0;
 
 		try {
 			reader = new FileReader(file);
 			final BufferedReader br = new BufferedReader(reader);
 
-			while (true) {
+			for (int lineNumber = 1; true; lineNumber++) {
 				final String line = br.readLine();
 				if (line == null) {
 					break; // EOF
@@ -97,20 +103,29 @@ public class JavaLanguageParser implements LanguageParser {
 					braceDepth--;
 					if (braceDepth == 1) { // end of method or inner-class
 						if (inMethod) {
-							methods.get(methods.size() - 1).code = code
-									.toString();
+							final ZNode method = methods
+									.get(methods.size() - 1);
+							method.code = code.append(line).toString();
+							method.extension = methodStart + "-" + lineNumber;
 							inMethod = false;
 						}
 						code.setLength(0);
+						methodStart = lineNumber + 1;
+					} else {
+						code.append(line).append('\n');
 					}
-				} else if (braceDepth >= 1 && (inMethod || !line.contains(";"))) {
-					code.append(line).append('\n');
+				} else if (braceDepth >= 1) {
+					if (!inMethod && line.contains(";")) {
+						code.setLength(0);
+						methodStart = lineNumber + 1;
+					} else {
+						code.append(line).append('\n');
+					}
 				}
 				if (!inMethod && braceDepth >= 1 && isMethodSig(code)) {
 					methods.add(new ZNode(ZNodeType.METHOD, toMethodName(code),
 							code.toString(), "", file.lastModified()));
 					inMethod = true;
-					code.setLength(0);
 				}
 			}
 		} catch (IOException e) {
@@ -128,15 +143,52 @@ public class JavaLanguageParser implements LanguageParser {
 	}
 
 	private String toMethodName(final StringBuilder code) {
-		String[] split = code.toString().trim().split("\\s+");
+		final String trim = code.toString().trim();
 		StringBuilder name = new StringBuilder();
-		for (String s : split) {
+		String signature = trim.substring(
+				isCommentStart(trim, 0) ? findCommentEnd(trim, 0) : 0).trim();
+
+		for (String s : signature.split("\\s+")) {
 			if (!s.startsWith("@") && !"{".equals(s)
 					&& !getReservedWords().contains(s)) {
 				name.append(s).append(' ');
 			}
 		}
 		return name.toString();
+	}
+
+	@Override
+	public boolean isCommentStart(CharSequence code, int i) {
+		if (i + 1 >= code.length()) {
+			return false;
+		}
+		final char char2 = code.charAt(i + 1);
+		return (code.charAt(i) == '/' && (char2 == '*' || char2 == '/'));
+	}
+
+	@Override
+	public int findCommentEnd(CharSequence code, int i) {
+		if (code.charAt(i + 1) == '*') {
+			return findCommentBlockEnd(code, i + 2);
+		} else {
+			return findCommentLineEnd(code, i + 2);
+		}
+	}
+
+	private int findCommentBlockEnd(CharSequence code, int i) {
+		if (i + 1 >= code.length()) {
+			return i;
+		} else if ("*/".equals(code.subSequence(i, i + 2))) {
+			return i + 2;
+		}
+		return findCommentBlockEnd(code, i + 1);
+	}
+
+	private int findCommentLineEnd(CharSequence code, int i) {
+		if (i + 1 >= code.length() || code.charAt(i) == '\n') {
+			return i + 1;
+		}
+		return findCommentLineEnd(code, i + 1);
 	}
 
 	private boolean isMethodSig(CharSequence code) {

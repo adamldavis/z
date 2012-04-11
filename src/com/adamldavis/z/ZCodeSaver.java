@@ -1,9 +1,10 @@
 package com.adamldavis.z;
 
-import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
+
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.LineIterator;
 
 import com.adamldavis.z.api.APIFactory;
 import com.adamldavis.z.api.CodeFormatter;
@@ -18,6 +19,8 @@ public class ZCodeSaver {
 
 	final DependencyManager dependencyManager;
 
+	String encoding = "UTF-8";
+
 	public ZCodeSaver(APIFactory apiFactory) {
 		this(apiFactory.getCodeFormatter(), apiFactory.getDependencyManager(),
 				apiFactory.getLanguageParser());
@@ -31,43 +34,78 @@ public class ZCodeSaver {
 		this.dependencyManager = dependencyManager;
 	}
 
+	private String getClassCode(ZNode zNode) {
+		final StringBuilder builder = new StringBuilder(zNode.code);
+
+		for (ZNode method : zNode.dependencies) {
+			builder.append("\n\n").append(method.code);
+		}
+		if (languageParser.usesBraces()) {
+			builder.append("\n}\n");
+		}
+
+		return builder.toString();
+	}
+
 	public void save(ZNode zNode) {
 		switch (zNode.zNodeType) {
 		case CLASS:
-			save(new File(zNode.directory, zNode.name + "." + zNode.extension),
-					zNode.code.getBytes());
+			save(new File(zNode.parentFile, zNode.name + "." + zNode.extension),
+					getClassCode(zNode));
+			break;
 		case PACKAGE:
-			save(new File(zNode.directory, languageParser.getPackageFilename()),
-					zNode.code.getBytes());
+			save(new File(zNode.parentFile, languageParser.getPackageFilename()),
+					zNode.code);
+			break;
 		case MODULE:
 			if (zNode.code != null && zNode.code.length() > 0) {
 				dependencyManager.save(zNode);
 			}
+			break;
 		case METHOD:
-			// TODO: save only the changes
+			saveMethod(zNode);
+			// TODO: update all line #'s?
+			break;
 		}
 	}
 
-	public void save(File file, byte[] bytes) {
-		FileOutputStream fos = null;
-
+	/** Overwrite only the method represented by given node. */
+	private void saveMethod(ZNode zNode) {
+		int n = 0, start, end;
 		try {
-			fos = new FileOutputStream(file);
-			final BufferedOutputStream bos = new BufferedOutputStream(fos);
-			bos.write(bytes);
-			bos.flush();
-			fos.flush();
+			if (zNode.extension.matches("\\d+-\\d+")) {
+				String[] split = zNode.extension.split("-");
+				start = Integer.parseInt(split[0]);
+				end = Integer.parseInt(split[1]);
+			} else {
+				// new method
+				start = end = Integer.parseInt(zNode.extension);
+			}
+			final File classFile = zNode.parentFile;
+			LineIterator iter = FileUtils.lineIterator(classFile);
+			File temp = File.createTempFile(classFile.getName() + "_z", null);
 
+			// iterate through file, copying it, except overwriting the method
+			for (String line = null; iter.hasNext(); n++) {
+				line = iter.next();
+				if (n >= start && n < end) {
+					FileUtils.write(temp, zNode.code + "\n", true);
+				} else
+					FileUtils.write(temp, line + "\n", true);
+			}
+			temp.renameTo(classFile);
+		} catch (NumberFormatException nfe) {
+			throw new RuntimeException("extension=" + zNode.extension);
+		} catch (IOException e) {
+			throw new RuntimeException("file=" + zNode.parentFile);
+		}
+	}
+
+	public void save(File file, String data) {
+		try {
+			FileUtils.writeStringToFile(file, data, encoding);
 		} catch (IOException e) {
 			throw new RuntimeException(e);
-		} finally {
-			if (fos != null) {
-				try {
-					fos.close();
-				} catch (IOException e) {
-					throw new RuntimeException(e);
-				}
-			}
 		}
 	}
 }

@@ -28,4 +28,8 @@ public interface LanguageParser {
 	/** File used by package for comments (package-info.java in Java). */
 	String getPackageFilename();
 
+	boolean isCommentStart(CharSequence code, int i);
+
+	int findCommentEnd(CharSequence code, int i);
+
 }
