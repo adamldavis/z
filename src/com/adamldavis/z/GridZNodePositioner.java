@@ -11,7 +11,7 @@ public class GridZNodePositioner extends AbstractZNodePositioner {
 	}
 
 	private Point2D getPosition(int index, int size, float x) {
-		int maxSize = 8;
+		int maxSize = 6;
 		int smin = Math.min(maxSize, size), imod = index % maxSize;
 		float y = 1 / (smin + 1.0f) + imod / (smin + 1.0f);
 
