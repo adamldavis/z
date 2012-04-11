@@ -7,6 +7,7 @@ import java.awt.event.KeyListener;
 import javax.swing.JEditorPane;
 import javax.swing.JFrame;
 import javax.swing.JScrollPane;
+import javax.swing.SwingUtilities;
 
 import com.adamldavis.z.api.APIFactory;
 
@@ -36,7 +37,16 @@ public class ZCodeEditor extends JFrame {
 
 			@Override
 			public void keyTyped(KeyEvent e) {
-				save();
+				SwingUtilities.invokeLater(new Runnable() {
+					@Override
+					public void run() {
+						try {
+							Thread.sleep(100); // 1/10 second
+						} catch (InterruptedException e) {
+						}
+						save();
+					}
+				});
 			}
 
 			@Override
