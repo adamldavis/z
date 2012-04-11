@@ -77,10 +77,9 @@ public class Z extends Display2d {
 
 	UserSettings settings = new UserSettings();
 
-	ZNode menu = new ZNode(100, 100, "MENU");
-	{
-		menu.zNodeType = ZNodeType.METHOD;
-	}
+	ZNode goUp = new ZNode(600, 100, "^");
+
+	ZNode menu = new ZNode(500, 100, "MENU");
 
 	ZMenu zMenu = new ZMenu(Z.this, new ActionListener() {
 
@@ -99,13 +98,16 @@ public class Z extends Display2d {
 		super(false, 2, 33);
 
 		loadSettings();
+		menu.zNodeType = ZNodeType.METHOD;
+		goUp.zNodeType = ZNodeType.METHOD;
+		goUp.code = "go up";
 
 		this.addMouseMotionListener(new MouseMotionAdapter() {
 
 			@Override
 			public void mouseDragged(MouseEvent e) {
 				if (e.getButton() != MouseEvent.BUTTON3) {
-					point2 = e.getLocationOnScreen();
+					point2 = e.getPoint();
 				}
 			}
 		});
@@ -115,9 +117,9 @@ public class Z extends Display2d {
 			public void mousePressed(MouseEvent e) {
 				System.out.println("pressed: " + e);
 				if (e.getButton() != MouseEvent.BUTTON3) {
-					point1 = e.getLocationOnScreen();
+					point1 = e.getPoint();
 				}
-				ZNode z = findZNodeAt(e.getLocationOnScreen());
+				ZNode z = findZNodeAt(e.getPoint());
 				if (z != null) {
 					if (e.getButton() == MouseEvent.BUTTON1) {
 						clicked(z);
@@ -135,11 +137,11 @@ public class Z extends Display2d {
 			public void mouseReleased(MouseEvent e) {
 				System.out.println("released: " + e);
 				if (point1 != null && point2 != null) {
-					ZNode z = findZNodeAt(e.getLocationOnScreen());
+					ZNode z = findZNodeAt(e.getPoint());
 					if (z == null) {
 						if (selectedNode != null) {
 							// create sub-module
-							ZNode sub = createNewZ(e.getLocationOnScreen());
+							ZNode sub = createNewZ(e.getPoint());
 							selectedNode.submodules.add(sub);
 						}
 					} else {
@@ -151,7 +153,7 @@ public class Z extends Display2d {
 
 			@Override
 			public void mouseClicked(MouseEvent e) {
-				final Point p = (new Point(e.getLocationOnScreen()));
+				final Point p = e.getPoint();
 
 				if (menu.location.distance(p.x, p.y) < size) {
 					timer.stop();
@@ -164,6 +166,11 @@ public class Z extends Display2d {
 							zMenu.requestFocus();
 						}
 					});
+					return;
+				} else if (goUp.location.distance(p.x, p.y) < size) {
+					selectedNode = new ZCodeLoader(apiFactory)
+							.load(selectedNode.parentFile);
+					clicked(selectedNode);
 					return;
 				}
 				ZNode z = findZNodeAt(p);
@@ -290,7 +297,7 @@ public class Z extends Display2d {
 			}
 			if (node == selectedNode) {
 				updateCount();
-				node.draw(g2d, size + (count.get() / 10) % 10, Color.YELLOW);
+				node.draw(g2d, size + (count.get() / 10) * 2, Color.YELLOW);
 			} else {
 				node.draw(g2d, size, Color.WHITE);
 			}
@@ -299,17 +306,13 @@ public class Z extends Display2d {
 			drawLine(g2d, point1.x, point1.y, point2.x, point2.y);
 		}
 		menu.draw(g2d, 100, Color.GREEN);
+		goUp.draw(g2d, 100, Color.GREEN);
 	}
 
-	void updateCount() {
-		if (count.get() == 99) {
-			count.set(199);
-		} else if (count.get() == 101) {
+	private void updateCount() {
+		count.incrementAndGet();
+		if (count.get() >= 20) {
 			count.set(0);
-		} else if (count.get() >= 100) {
-			count.decrementAndGet();
-		} else {
-			count.incrementAndGet();
 		}
 	}
 
