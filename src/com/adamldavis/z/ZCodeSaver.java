@@ -40,7 +40,9 @@ public class ZCodeSaver {
 			save(new File(zNode.directory, languageParser.getPackageFilename()),
 					zNode.code.getBytes());
 		case MODULE:
-			// TODO: save pom.xml
+			if (zNode.code != null && zNode.code.length() > 0) {
+				dependencyManager.save(zNode);
+			}
 		case METHOD:
 			// TODO: save only the changes
 		}

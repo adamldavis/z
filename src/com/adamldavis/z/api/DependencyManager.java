@@ -16,4 +16,6 @@ public interface DependencyManager {
 
 	List<ZNode> getDependencies(File dependencyFile);
 
+	void save(ZNode dependencyNode);
+
 }
