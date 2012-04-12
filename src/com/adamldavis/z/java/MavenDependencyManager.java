@@ -100,8 +100,8 @@ public class MavenDependencyManager implements DependencyManager {
 			if (DEPENDENCY.equals(dep.getNodeName())) {
 				final String artifaceId = getNodeContent(ARTIFACT_ID, dep);
 
-				list.add(new ZNode(ZNodeType.MODULE, artifaceId, flatten(dep),
-						"xml", lastModified));
+				list.add(new ZNode(ZNodeType.DEPENDENCY, artifaceId,
+						flatten(dep), "xml", lastModified));
 			}
 		}
 		return list;

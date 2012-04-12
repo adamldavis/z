@@ -17,7 +17,7 @@ import java.util.List;
 public class ZNode {
 
 	public enum ZNodeType {
-		MODULE, PACKAGE, CLASS, METHOD
+		MODULE, PACKAGE, CLASS, METHOD, DEPENDENCY
 	};
 
 	public Point2D.Float location;
@@ -84,6 +84,12 @@ public class ZNode {
 			break;
 		case PACKAGE:
 			g2d.drawOval(x, y, isize, (int) (isize * 0.75));
+			break;
+		case DEPENDENCY:
+			// draw dotted line circle:
+			for (int i = 0; i < 36; i++) {
+				g2d.drawArc(x, y, isize, isize, i * 10, 5);
+			}
 			break;
 		}
 		if (name != null) {
