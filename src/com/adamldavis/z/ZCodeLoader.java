@@ -11,6 +11,8 @@ import java.util.Collection;
 import java.util.List;
 
 import org.apache.commons.io.FileUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.adamldavis.z.ZNode.ZNodeType;
 import com.adamldavis.z.api.APIFactory;
@@ -19,6 +21,9 @@ import com.adamldavis.z.api.DependencyManager;
 import com.adamldavis.z.api.LanguageParser;
 
 public class ZCodeLoader {
+
+	private static final Logger log = LoggerFactory
+			.getLogger(ZCodeLoader.class);
 
 	CodeFormatter codeFormatter;
 
@@ -48,9 +53,16 @@ public class ZCodeLoader {
 						dependencyManager.getProjectName(file), "", "xml",
 						file.lastModified());
 				node.dependencies.addAll(deps);
-				node.submodules.addAll(loadPackages(dependencyManager
-						.getSourceFolder(file)));
+				node.parentFile = file.getParentFile();
+				node.code = dependencyManager.loadCode(file);
+				final File src = dependencyManager.getSourceFolder(file);
 
+				if (src != null) {
+					node.submodules.addAll(loadPackages(src));
+				}
+				for (ZNode pack : node.submodules) {
+					pack.dependencies.addAll(deps);
+				}
 				return node;
 			}
 			return loadFile(file, false);
@@ -75,6 +87,9 @@ public class ZCodeLoader {
 
 	private Collection<? extends ZNode> loadPackages(File curr,
 			final ArrayList<ZNode> nodes) {
+		if (curr == null || !curr.isDirectory()) {
+			return nodes;
+		}
 		for (File file : curr.listFiles()) {
 			String name = file.getName();
 
@@ -118,6 +133,7 @@ public class ZCodeLoader {
 	/** load Directory as a Module. */
 	private ZNode loadDir(File dir) {
 		ZNode node = new ZNode();
+		node.parentFile = dir;
 		node.name = dir.getName();
 		node.extension = "";
 		node.zNodeType = ZNodeType.MODULE;
@@ -128,6 +144,8 @@ public class ZCodeLoader {
 	/** Load a module, package or class. */
 	public ZNode load(ZNode node) {
 
+		System.out.println("load: " + node);
+		System.out.println("parentFile=" + node.parentFile);
 		node.submodules.clear();
 
 		switch (node.zNodeType) {

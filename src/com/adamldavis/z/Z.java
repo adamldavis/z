@@ -12,6 +12,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
 import java.awt.geom.Point2D;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -141,11 +142,7 @@ public class Z extends Display2d {
 				if (point1 != null && point2 != null) {
 					ZNode z = findZNodeAt(e.getPoint());
 					if (z == null) {
-						if (selectedNode != null) {
-							// create sub-module
-							ZNode sub = createNewZ(e.getPoint());
-							selectedNode.submodules.add(sub);
-						}
+						createSubNode(e);
 					} else {
 						dragged(z);
 					}
@@ -170,14 +167,21 @@ public class Z extends Display2d {
 					});
 					return;
 				} else if (goUp.location.distance(p.x, p.y) < size) {
+					final File pFile = selectedNode.parentFile;
 					selectedNode = new ZCodeLoader(apiFactory)
-							.load(selectedNode.parentFile);
+							.load((selectedNode.zNodeType == ZNodeType.PACKAGE) ? pFile
+									.getParentFile() : pFile);
 					clicked(selectedNode);
 					return;
 				}
 				ZNode z = findZNodeAt(p);
 				if (z == null) {
-					createNewZ(p);
+					if (selectedNode == null) {
+						createNewZ(p, ZNodeType.MODULE);
+					} else {
+						selectedNode.dependencies.add(createNewZ(p,
+								ZNodeType.DEPENDENCY));
+					}
 				} else
 					clicked(z);
 			}
@@ -220,9 +224,9 @@ public class Z extends Display2d {
 
 	ZNodePositioner nodePositioner;
 
-	protected void clicked(ZNode z) {
-		System.out.println("selected: " + z);
-		selectedNode = new ZCodeLoader(apiFactory).load(z);
+	protected void clicked(ZNode node) {
+		System.out.println("selected: " + node);
+		selectedNode = new ZCodeLoader(apiFactory).load(node);
 		zNodes.clear();
 		zNodes.add(selectedNode);
 		zNodes.addAll(selectedNode.dependencies);
@@ -331,13 +335,28 @@ public class Z extends Display2d {
 		return found;
 	}
 
-	ZNode createNewZ(Point p) {
-		final String name = JOptionPane.showInputDialog(this,
-				"Name for new module", "Z");
+	protected void createSubNode(MouseEvent e) {
+		if (selectedNode != null && selectedNode.zNodeType != ZNodeType.METHOD
+				&& selectedNode.zNodeType != ZNodeType.DEPENDENCY) {
+			// create sub-module
+			ZNode sub = createNewZ(
+					e.getPoint(),
+					selectedNode.zNodeType == ZNodeType.CLASS ? ZNodeType.METHOD
+							: ZNodeType.PACKAGE);
+			if (sub != null)
+				selectedNode.submodules.add(sub);
+		}
+	}
+
+	ZNode createNewZ(Point p, ZNodeType type) {
+		final String name = JOptionPane.showInputDialog(this, "Name for new "
+				+ type.name(), "Z");
 		if (name == null) {
 			return null;
 		}
 		final ZNode zNode = new ZNode(p.x, p.y, name);
+		zNode.zNodeType = type;
+		zNode.parentFile = selectedNode.parentFile;
 		zNodes.add(zNode);
 		return zNode;
 	}

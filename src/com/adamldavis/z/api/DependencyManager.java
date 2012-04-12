@@ -16,6 +16,9 @@ public interface DependencyManager {
 
 	List<ZNode> getDependencies(File dependencyFile);
 
+	/** Flatten the given file minus dependencies into a String. */
+	String loadCode(File dependencyFile);
+
 	void save(ZNode dependencyNode);
 
 }

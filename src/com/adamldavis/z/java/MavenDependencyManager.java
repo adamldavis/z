@@ -6,6 +6,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -15,10 +16,12 @@ import javax.xml.parsers.ParserConfigurationException;
 import org.apache.commons.io.FileUtils;
 import org.apache.xml.serialize.OutputFormat;
 import org.apache.xml.serialize.XMLSerializer;
+import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+import org.w3c.dom.Text;
 import org.xml.sax.SAXException;
 
 import com.adamldavis.z.ZNode;
@@ -47,6 +50,8 @@ public class MavenDependencyManager implements DependencyManager {
 
 	public static final String GROUP_ID = "groupId";
 
+	public static final String PROJECT = "project";
+
 	public <T> T doInXmlFile(T list, File file, DoInXmlCallback<T> func) {
 		long lastModified = file.lastModified();
 
@@ -70,16 +75,35 @@ public class MavenDependencyManager implements DependencyManager {
 	}
 
 	String flatten(Node dep) {
+		return flatten(dep, new LinkedList<String>()).toString();
+	}
+
+	CharSequence flatten(final Node dep, final List<String> nest) {
 		final StringBuilder builder = new StringBuilder();
 
 		for (Node child = dep.getFirstChild(); child != null; child = child
 				.getNextSibling()) {
 			if (child instanceof Element) {
-				builder.append(child.getNodeName()).append('=')
-						.append(child.getTextContent()).append('\n');
+				if (DEPENDENCIES.equals(child.getNodeName())) {
+					// skip
+				} else if (child.getChildNodes().getLength() == 1
+						&& child.getFirstChild() instanceof Text) {
+					StringBuilder name = new StringBuilder();
+
+					for (String nestName : nest) {
+						name.append(nestName).append('.');
+					}
+					name.append(child.getNodeName());
+					builder.append(name).append('=')
+							.append(child.getTextContent()).append('\n');
+				} else {
+					List<String> list = new LinkedList<String>(nest);
+					list.add(child.getNodeName());
+					builder.append(flatten(child, list));
+				}
 			}
 		}
-		return builder.toString();
+		return builder;
 	}
 
 	private List<ZNode> getDependencies(Document doc, long lastModified,
@@ -166,7 +190,7 @@ public class MavenDependencyManager implements DependencyManager {
 
 	@Override
 	public File getSourceFolder(final File dependencyFile) {
-		File file = new File(dependencyFile.getParentFile(), "src");
+		File file = new File(dependencyFile.getParentFile(), "src/main/java/");
 
 		return doInXmlFile(file, dependencyFile, new DoInXmlCallback<File>() {
 
@@ -191,14 +215,36 @@ public class MavenDependencyManager implements DependencyManager {
 	}
 
 	@Override
-	public void save(ZNode zNode) {
+	public String loadCode(File dependencyFile) {
+		return doInXmlFile("", dependencyFile, new DoInXmlCallback<String>() {
+
+			@Override
+			public String doInXml(Document doc, long lastModified,
+					String inParameter) throws ParserConfigurationException,
+					SAXException, IOException, FileNotFoundException {
+				return flatten(doc.getDocumentElement());
+			}
+		});
+	}
+
+	@Override
+	public void save(final ZNode zNode) {
 		final File file = new File(zNode.parentFile, getStandardFileName());
 
 		try {
 			final DocumentBuilder docBuilder = DocumentBuilderFactory
 					.newInstance().newDocumentBuilder();
-			final FileInputStream fis = new FileInputStream(file);
-			final Document doc = docBuilder.parse(fis);
+			final Document doc;
+			FileInputStream fis = null;
+
+			if (file.isFile()) {
+				doc = docBuilder.parse(fis = new FileInputStream(file));
+			} else {
+				doc = docBuilder.newDocument();
+				final Element project = doc.createElement(PROJECT);
+				project.appendChild(doc.createElement(DEPENDENCIES));
+				doc.appendChild(project);
+			}
 			final NodeList depsList = doc.getDocumentElement()
 					.getElementsByTagName(DEPENDENCIES);
 
@@ -206,25 +252,15 @@ public class MavenDependencyManager implements DependencyManager {
 				return;
 			}
 			final Node deps = depsList.item(0);
-			final NodeList dependencyNodes = deps.getChildNodes();
-			Node dependency = null;
 
-			for (int i = 0; i < dependencyNodes.getLength(); i++) {
-				final Node item = dependencyNodes.item(i);
-
-				if (DEPENDENCY.equals(item.getNodeName())) {
-					if (zNode.name.equals(getNodeContent(ARTIFACT_ID, item))) {
-						dependency = item;
-						break;
-					}
-				}
-			}
-			if (dependency == null) {
-				deps.appendChild(unflatten(doc, zNode.code));
+			if (zNode.zNodeType == ZNodeType.DEPENDENCY) {
+				saveDependencyNode(zNode, doc, deps);
 			} else {
-				deps.replaceChild(unflatten(doc, zNode.code), dependency);
+				unflatten(doc, zNode.code, doc.getDocumentElement());
 			}
-			fis.close();
+			if (fis != null) {
+				fis.close();
+			}
 			saveXML(file, doc);
 
 		} catch (FileNotFoundException e) {
@@ -239,11 +275,32 @@ public class MavenDependencyManager implements DependencyManager {
 
 	}
 
+	protected void saveDependencyNode(final ZNode zNode, final Document doc,
+			final Node deps) throws DOMException {
+		final NodeList dependencyNodes = deps.getChildNodes();
+		Node dependency = null;
+
+		for (int i = 0; i < dependencyNodes.getLength(); i++) {
+			final Node item = dependencyNodes.item(i);
+
+			if (DEPENDENCY.equals(item.getNodeName())) {
+				if (zNode.name.equals(getNodeContent(ARTIFACT_ID, item))) {
+					dependency = item;
+					break;
+				}
+			}
+		}
+		if (dependency == null) {
+			deps.appendChild(unflatten(doc, zNode.code));
+		} else {
+			deps.replaceChild(unflatten(doc, zNode.code), dependency);
+		}
+	}
+
 	@SuppressWarnings("deprecation")
 	private void saveXML(final File file, Document doc) throws IOException {
 		doc.setStrictErrorChecking(false);
 		OutputFormat format = new OutputFormat(doc);
-		format.setPreserveSpace(true);
 		format.setIndenting(true);
 		XMLSerializer serializer = new XMLSerializer(format);
 		final FileOutputStream fos = FileUtils.openOutputStream(file);
@@ -254,19 +311,42 @@ public class MavenDependencyManager implements DependencyManager {
 	}
 
 	Element unflatten(Document doc, String code) {
-		final Element node = doc.createElement(DEPENDENCY);
-		final String[] lines = code.split("\n");
+		return unflatten(doc, code, doc.createElement(DEPENDENCY));
+	}
+
+	Element unflatten(Document doc, String code, final Element node) {
+		final String[] lines = code.split("[\n\r]+");
 
 		for (String line : lines) {
-			String key = line.substring(0, line.indexOf('='));
-			Element child = doc.createElement(key);
-			child.setTextContent(line.substring(line.indexOf('=') + 1));
-			node.appendChild(doc.createTextNode("\n\t\t\t"));
-			node.appendChild(child);
-			if (line.equals(lines[lines.length - 1]))
-				node.appendChild(doc.createTextNode("\n\t\t"));
+			unflatten(doc, node, line);
 		}
 		return node;
+	}
+
+	protected void unflatten(Document doc, final Element node, String line)
+			throws DOMException {
+		if (line.indexOf('=') < 0) {
+			return;
+		}
+		String key = line.substring(0, line.indexOf('='));
+
+		if (key.contains(".")) {
+			Node parent = node;
+
+			for (String name : key.split("\\.")) {
+				if (getNode(name, parent) == null) {
+					parent = parent.appendChild(doc.createElement(name));
+				} else
+					parent = getNode(name, parent);
+			}
+			parent.setTextContent(line.substring(line.indexOf('=') + 1));
+		} else {
+			final Node child = getNode(key, node) == null ? doc
+					.createElement(key) : getNode(key, node);
+
+			child.setTextContent(line.substring(line.indexOf('=') + 1));
+			node.appendChild(child);
+		}
 	}
 
 }

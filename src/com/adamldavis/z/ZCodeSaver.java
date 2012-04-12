@@ -58,6 +58,7 @@ public class ZCodeSaver {
 					zNode.code);
 			break;
 		case MODULE:
+		case DEPENDENCY:
 			if (zNode.code != null && zNode.code.length() > 0) {
 				dependencyManager.save(zNode);
 			}
