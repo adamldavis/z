@@ -37,16 +37,9 @@ public class ZCodeEditor extends JFrame {
 
 			@Override
 			public void keyTyped(KeyEvent e) {
-				SwingUtilities.invokeLater(new Runnable() {
-					@Override
-					public void run() {
-						try {
-							Thread.sleep(100); // 1/10 second
-						} catch (InterruptedException e) {
-						}
-						save();
-					}
-				});
+				if (e.getKeyChar() == '\n') {
+					saveLater();
+				}
 			}
 
 			@Override
@@ -63,5 +56,18 @@ public class ZCodeEditor extends JFrame {
 		System.out.println("Saving: " + zNode);
 		zNode.code = editor.getText();
 		new ZCodeSaver(apiFactory).save(zNode);
+	}
+
+	protected void saveLater() {
+		SwingUtilities.invokeLater(new Runnable() {
+			@Override
+			public void run() {
+				try {
+					Thread.sleep(100); // 1/10 second
+				} catch (InterruptedException e) {
+				}
+				save();
+			}
+		});
 	}
 }
