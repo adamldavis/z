@@ -155,37 +155,47 @@ public class Z extends Display2d {
 				final Point p = e.getPoint();
 
 				if (menu.location.distance(p.x, p.y) < size) {
-					timer.stop();
-					zMenu.setLocation(e.getLocationOnScreen());
-					SwingUtilities.invokeLater(new Runnable() {
-
-						@Override
-						public void run() {
-							zMenu.setVisible(true);
-							zMenu.requestFocus();
-						}
-					});
+					activateMenu(e);
 					return;
 				} else if (goUp.location.distance(p.x, p.y) < size) {
-					final File pFile = selectedNode.parentFile;
-					selectedNode = new ZCodeLoader(apiFactory)
-							.load((selectedNode.zNodeType == ZNodeType.PACKAGE) ? pFile
-									.getParentFile() : pFile);
-					clicked(selectedNode);
+					activateGoUp();
 					return;
 				}
 				ZNode z = findZNodeAt(p);
 				if (z == null) {
 					if (selectedNode == null) {
-						createNewZ(p, ZNodeType.MODULE);
+						selectedNode = createNewZ(p, ZNodeType.MODULE);
 					} else {
-						selectedNode.dependencies.add(createNewZ(p,
-								ZNodeType.DEPENDENCY));
+						final ZNode dep = createNewZ(p,
+								ZNodeType.DEPENDENCY);
+						if (dep != null)
+							selectedNode.dependencies.add(dep);
 					}
 				} else
 					clicked(z);
 			}
 		});
+	}
+
+	protected void activateMenu(MouseEvent e) {
+		timer.stop();
+		zMenu.setLocation(e.getLocationOnScreen());
+		SwingUtilities.invokeLater(new Runnable() {
+
+			@Override
+			public void run() {
+				zMenu.setVisible(true);
+				zMenu.requestFocus();
+			}
+		});
+	}
+
+	protected void activateGoUp() {
+		final File pFile = selectedNode.parentFile;
+		selectedNode = new ZCodeLoader(apiFactory)
+				.load((selectedNode.zNodeType == ZNodeType.PACKAGE) ? pFile
+						.getParentFile() : pFile);
+		clicked(selectedNode);
 	}
 
 	private void loadSettings() {
@@ -339,10 +349,18 @@ public class Z extends Display2d {
 		if (selectedNode != null && selectedNode.zNodeType != ZNodeType.METHOD
 				&& selectedNode.zNodeType != ZNodeType.DEPENDENCY) {
 			// create sub-module
-			ZNode sub = createNewZ(
-					e.getPoint(),
-					selectedNode.zNodeType == ZNodeType.CLASS ? ZNodeType.METHOD
-							: ZNodeType.PACKAGE);
+			final ZNodeType subtype;
+			switch (selectedNode.zNodeType) {
+			case CLASS:
+				subtype = ZNodeType.METHOD;
+				break;
+			case PACKAGE:
+				subtype = ZNodeType.CLASS;
+				break;
+			default:
+				subtype = ZNodeType.PACKAGE;
+			}
+			ZNode sub = createNewZ(e.getPoint(), subtype);
 			if (sub != null)
 				selectedNode.submodules.add(sub);
 		}
@@ -354,10 +372,11 @@ public class Z extends Display2d {
 		if (name == null) {
 			return null;
 		}
-		final ZNode zNode = new ZNode(p.x, p.y, name);
+		final ZNode zNode = new ZNode(p.x, p.y, name.trim());
 		zNode.zNodeType = type;
 		zNode.parentFile = selectedNode.parentFile;
 		zNodes.add(zNode);
+		new ZCodeSaver(apiFactory).save(zNode);
 		return zNode;
 	}
 

@@ -11,6 +11,12 @@ import com.adamldavis.z.api.CodeFormatter;
 import com.adamldavis.z.api.DependencyManager;
 import com.adamldavis.z.api.LanguageParser;
 
+/**
+ * Responsible for saving things.
+ * 
+ * @author Adam Davis
+ * 
+ */
 public class ZCodeSaver {
 
 	final CodeFormatter codeFormatter;
@@ -36,12 +42,16 @@ public class ZCodeSaver {
 
 	private String getClassCode(ZNode zNode) {
 		final StringBuilder builder = new StringBuilder(zNode.code);
+		int end = languageParser.usesBraces() ? builder.lastIndexOf("}")
+				: builder.length();
 
-		for (ZNode method : zNode.dependencies) {
-			builder.append("\n\n").append(method.code);
+		if (end > 0) {
+			end--;
+		} else {
+			end = 0;
 		}
-		if (languageParser.usesBraces()) {
-			builder.append("\n}\n");
+		for (ZNode method : zNode.dependencies) {
+			builder.insert(end, "\n\n" + method.code);
 		}
 
 		return builder.toString();
@@ -54,6 +64,17 @@ public class ZCodeSaver {
 					getClassCode(zNode));
 			break;
 		case PACKAGE:
+			String dir = zNode.name.replace('.', File.separatorChar);
+
+			if (!zNode.parentFile.getAbsolutePath().endsWith(dir)) {
+				zNode.parentFile = new File(zNode.parentFile, dir);
+				zNode.parentFile.mkdirs(); // make dirs
+			}
+			if (zNode.code.trim().length() == 0) {
+				zNode.code = languageParser.getPackageKeyword() + " "
+						+ zNode.name.replaceAll("\\W", ".")
+						+ (languageParser.requiresSemicolon() ? ";" : "");
+			}
 			save(new File(zNode.parentFile, languageParser.getPackageFilename()),
 					zNode.code);
 			break;
