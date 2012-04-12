@@ -101,6 +101,8 @@ public class Z extends Display2d {
 		menu.zNodeType = ZNodeType.METHOD;
 		goUp.zNodeType = ZNodeType.METHOD;
 		goUp.code = "go up";
+		menu.location.x = width / 2 - size;
+		goUp.location.x = menu.location.x + size;
 
 		this.addMouseMotionListener(new MouseMotionAdapter() {
 
@@ -307,8 +309,8 @@ public class Z extends Display2d {
 		if (point1 != null && point2 != null) {
 			drawLine(g2d, point1.x, point1.y, point2.x, point2.y);
 		}
-		menu.draw(g2d, 100, Color.GREEN);
-		goUp.draw(g2d, 100, Color.GREEN);
+		menu.draw(g2d, size, Color.GREEN);
+		goUp.draw(g2d, size, Color.GREEN);
 	}
 
 	private void updateCount() {
