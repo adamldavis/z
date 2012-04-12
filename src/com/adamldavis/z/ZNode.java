@@ -26,7 +26,7 @@ public class ZNode {
 	public String name = "";
 	public String code = "";
 
-	public String extension = "java";
+	public String extension = "";
 	public File parentFile = new File("./");
 
 	public final List<ZNode> dependencies = new ArrayList<ZNode>();

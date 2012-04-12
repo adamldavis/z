@@ -110,12 +110,17 @@ public class ZCodeSaver {
 			// iterate through file, copying it, except overwriting the method
 			for (String line = null; iter.hasNext(); n++) {
 				line = iter.next();
-				if (n >= start && n < end) {
+				if (n > start && n < end) {
+					// skip these lines
+				} else if (n == start) {
 					FileUtils.write(temp, zNode.code + "\n", true);
 				} else
 					FileUtils.write(temp, line + "\n", true);
 			}
-			temp.renameTo(classFile);
+			iter.close();
+			if (!classFile.delete() || !temp.renameTo(classFile)) {
+				throw new RuntimeException("rename failed!");
+			}
 		} catch (NumberFormatException nfe) {
 			throw new RuntimeException("extension=" + zNode.extension);
 		} catch (IOException e) {

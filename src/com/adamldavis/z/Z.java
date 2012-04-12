@@ -154,10 +154,10 @@ public class Z extends Display2d {
 			public void mouseClicked(MouseEvent e) {
 				final Point p = e.getPoint();
 
-				if (menu.location.distance(p.x, p.y) < size) {
+				if (menu.location.distance(p.x, p.y) < size * 0.5) {
 					activateMenu(e);
 					return;
-				} else if (goUp.location.distance(p.x, p.y) < size) {
+				} else if (goUp.location.distance(p.x, p.y) < size * 0.5) {
 					activateGoUp();
 					return;
 				}
@@ -166,8 +166,7 @@ public class Z extends Display2d {
 					if (selectedNode == null) {
 						selectedNode = createNewZ(p, ZNodeType.MODULE);
 					} else {
-						final ZNode dep = createNewZ(p,
-								ZNodeType.DEPENDENCY);
+						final ZNode dep = createNewZ(p, ZNodeType.DEPENDENCY);
 						if (dep != null)
 							selectedNode.dependencies.add(dep);
 					}
@@ -338,7 +337,7 @@ public class Z extends Display2d {
 		ZNode found = null;
 
 		for (ZNode z : zNodes) {
-			if (z.location.distance(p.x, p.y) < size) {
+			if (z.location.distance(p.x, p.y) < size * 0.5) {
 				found = z;
 			}
 		}
@@ -376,6 +375,13 @@ public class Z extends Display2d {
 		zNode.zNodeType = type;
 		zNode.parentFile = selectedNode.parentFile;
 		zNodes.add(zNode);
+		if (type == ZNodeType.METHOD) {
+			zNode.parentFile = new File(selectedNode.parentFile,
+					selectedNode.name + "." + selectedNode.extension);
+			String[] split = selectedNode.code.split("[\n\r]{1,2}");
+			zNode.extension = String.valueOf(split.length - 1);
+			System.err.println("ext=" + zNode.extension);
+		}
 		new ZCodeSaver(apiFactory).save(zNode);
 		return zNode;
 	}
