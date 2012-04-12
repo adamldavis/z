@@ -260,6 +260,8 @@ public class Z extends Display2d {
 		switch (nodeLayout) {
 		case BLOOM:
 			return new BloomZNodePositioner();
+		case RANDOM:
+			return new RandomZNodePositioner();
 		default:
 			return new GridZNodePositioner();
 		}
