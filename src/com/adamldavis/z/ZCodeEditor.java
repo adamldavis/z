@@ -24,7 +24,7 @@ public class ZCodeEditor extends JFrame {
 	public ZCodeEditor(ZNode zNode, APIFactory apiFactory) {
 		super("Z code editor:" + zNode);
 		editor = new JEditorPane("text/plain", apiFactory.getCodeFormatter()
-				.format(zNode.code));
+				.format(zNode.getCode()));
 		JScrollPane scrollPane = new JScrollPane(editor);
 		this.getRootPane().setLayout(new BorderLayout());
 		this.getRootPane().add(scrollPane);
@@ -54,7 +54,7 @@ public class ZCodeEditor extends JFrame {
 
 	public void save() {
 		System.out.println("Saving: " + zNode);
-		zNode.code = editor.getText();
+		zNode.replaceCode(editor.getText());
 		new ZCodeSaver(apiFactory).save(zNode);
 	}
 

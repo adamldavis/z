@@ -101,7 +101,7 @@ public class Z extends Display2d {
 		loadSettings();
 		menu.zNodeType = ZNodeType.METHOD;
 		goUp.zNodeType = ZNodeType.METHOD;
-		goUp.code = "go up";
+		goUp.replaceCode("go up");
 		menu.location.x = width / 2 - size;
 		goUp.location.x = menu.location.x + size;
 
@@ -259,7 +259,8 @@ public class Z extends Display2d {
 				case ALPHA:
 					return node1.name.compareTo(node2.name);
 				case SIZE:
-					return node1.code.length() - node2.code.length();
+					return node1.getCodeLineSize()
+							- node2.getCodeLineSize();
 				case TIME:
 					return (int) (node1.getLastModified() - node2
 							.getLastModified());
@@ -378,8 +379,12 @@ public class Z extends Display2d {
 		if (type == ZNodeType.METHOD) {
 			zNode.parentFile = new File(selectedNode.parentFile,
 					selectedNode.name + "." + selectedNode.extension);
-			String[] split = selectedNode.code.split("[\n\r]{1,2}");
-			zNode.extension = String.valueOf(split.length - 1);
+			int end = selectedNode.getEndLineNumber(apiFactory
+					.getLanguageParser());
+			for (ZNode method : selectedNode.submodules) {
+				end += method.getCodeLineSize();
+			}
+			zNode.extension = String.valueOf(end);
 			System.err.println("ext=" + zNode.extension);
 		}
 		new ZCodeSaver(apiFactory).save(zNode);

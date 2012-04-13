@@ -54,7 +54,7 @@ public class ZCodeLoader {
 						file.lastModified());
 				node.dependencies.addAll(deps);
 				node.parentFile = file.getParentFile();
-				node.code = dependencyManager.loadCode(file);
+				node.replaceCode(dependencyManager.loadCode(file));
 				final File src = dependencyManager.getSourceFolder(file);
 
 				if (src != null) {
@@ -122,7 +122,7 @@ public class ZCodeLoader {
 				})) {
 			node.setLastModified(packageInfo.lastModified());
 			try {
-				node.code = FileUtils.readFileToString(packageInfo);
+				node.setCode(FileUtils.readLines(file));
 			} catch (IOException e) {
 				throw new RuntimeException(e);
 			}
@@ -144,8 +144,8 @@ public class ZCodeLoader {
 	/** Load a module, package or class. */
 	public ZNode load(ZNode node) {
 
-		System.out.println("load: " + node);
-		System.out.println("parentFile=" + node.parentFile);
+		log.info("load: " + node);
+		log.info("parentFile=" + node.parentFile);
 		node.submodules.clear();
 
 		switch (node.zNodeType) {
@@ -207,8 +207,8 @@ public class ZCodeLoader {
 			node.name = name.substring(0, name.lastIndexOf('.'));
 		}
 		if (!getPackage) {
-			node.code = languageParser.getNonMethodPart(file);
-			node.code = codeFormatter.format(node.code);
+			node.replaceCode(languageParser.getNonMethodPart(file));
+			node.replaceCode(codeFormatter.format(node.getCode()));
 			return node;
 		}
 		FileReader reader = null;

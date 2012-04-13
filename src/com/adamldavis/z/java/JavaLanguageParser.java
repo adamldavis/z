@@ -30,7 +30,7 @@ public class JavaLanguageParser implements LanguageParser {
 			System.out.println("----------------METHOD--------------");
 			System.out.println("name=" + method.name);
 			System.out.println("ext=" + method.extension);
-			System.out.println(method.code);
+			System.out.println(method.getCode());
 		}
 		System.out.println("----------------CLASS--------------");
 		System.out.println(j.getNonMethodPart(file));
@@ -96,16 +96,16 @@ public class JavaLanguageParser implements LanguageParser {
 				} else if (line.startsWith(getImportKeyword())) {
 					continue;
 				}
-				if (line.contains("{")) {
+				if (hasOpenBracket(line)) {
 					braceDepth++;
 				}
-				if (line.contains("}")) {
+				if (hasCloseBracket(line)) {
 					braceDepth--;
 					if (braceDepth == 1) { // end of method or inner-class
 						if (inMethod) {
 							final ZNode method = methods
 									.get(methods.size() - 1);
-							method.code = code.append(line).toString();
+							method.replaceCode(code.append(line).toString());
 							method.extension = methodStart + "-" + lineNumber;
 							inMethod = false;
 						}
@@ -140,6 +140,14 @@ public class JavaLanguageParser implements LanguageParser {
 			}
 		}
 		return methods;
+	}
+
+	protected boolean hasCloseBracket(final String line) {
+		return line.contains("}") && !line.contains("\"}\"");
+	}
+
+	protected boolean hasOpenBracket(final String line) {
+		return line.contains("{") && !line.contains("\"{\"");
 	}
 
 	private String toMethodName(final StringBuilder code) {
@@ -248,13 +256,13 @@ public class JavaLanguageParser implements LanguageParser {
 				} else if (line.startsWith(getImportKeyword())) {
 					continue;
 				}
-				if (line.contains("{")) {
+				if (hasOpenBracket(line)) {
 					braceDepth++;
 					if (braceDepth == 1) { // class begins
 						i = code.length() + line.length();
 					}
 				}
-				if (line.contains("}")) {
+				if (hasCloseBracket(line)) {
 					braceDepth--;
 					if (braceDepth == 1) { // end of method or inner-class
 						if (inMethod) {

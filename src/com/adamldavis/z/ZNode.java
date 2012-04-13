@@ -6,7 +6,13 @@ import java.awt.Graphics2D;
 import java.awt.geom.Point2D;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
+
+import com.adamldavis.z.api.LanguageParser;
 
 /**
  * Module, Package, Class or Method.
@@ -24,7 +30,7 @@ public class ZNode {
 	public ZNodeType zNodeType = ZNodeType.MODULE;
 
 	public String name = "";
-	public String code = "";
+	private final List<String> code = new LinkedList<String>();
 
 	public String extension = "";
 	public File parentFile = new File("./");
@@ -51,7 +57,7 @@ public class ZNode {
 		this();
 		this.zNodeType = zNodeType;
 		this.name = name;
-		this.code = code;
+		setCode(code);
 		this.extension = extension;
 		this.lastModified = lastModified;
 	}
@@ -98,8 +104,7 @@ public class ZNode {
 		}
 		if (code != null) {
 			g2d.setFont(g2d.getFont().deriveFont(10f));
-			g2d.drawString(code.substring(0, Math.min(code.length(), 30)),
-					x + 10, y + 10);
+			g2d.drawString(code.isEmpty() ? "" : code.get(0), x + 10, y + 10);
 		}
 	}
 
@@ -116,6 +121,56 @@ public class ZNode {
 			g2d.drawLine((int) location.x, (int) location.y,
 					(int) sub.location.x, (int) sub.location.y);
 		}
+	}
+
+	// code related method
+	/** Is code empty? */
+	public boolean isCodeEmpty() {
+		return code.isEmpty();
+	}
+
+	public void addCodeLine(String code) {
+		this.code.add(code);
+	}
+
+	public void replaceCode(String code) {
+		setCode(code);
+	}
+
+	private void setCode(String code) {
+		this.code.clear();
+		this.code.addAll(Arrays.asList(code.split("[\n\r]{1,2}")));
+	}
+
+	public void setCode(Collection<String> code) {
+		this.code.clear();
+		this.code.addAll(code);
+	}
+
+	public String getCode() {
+		StringBuilder buffer = new StringBuilder();
+		for (String line : code) {
+			buffer.append(line).append('\n');
+		}
+		return buffer.toString();
+	}
+
+	public int getCodeLineSize() {
+		return code.size();
+	}
+
+	public List<String> getCodeLines() {
+		return Collections.unmodifiableList(this.code);
+	}
+
+	public int getEndLineNumber(LanguageParser languageParser) {
+		int i = code.size() - 1;
+
+		if (languageParser.usesBraces()) {
+			for (; code.get(i).indexOf("}") < 0 && i > 0; i--)
+				;
+		}
+		return i;
 	}
 
 	public long getLastModified() {

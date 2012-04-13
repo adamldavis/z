@@ -1,7 +1,11 @@
 package com.adamldavis.z;
 
+import static java.util.Arrays.asList;
+
 import java.io.File;
 import java.io.IOException;
+import java.util.LinkedList;
+import java.util.List;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.LineIterator;
@@ -40,21 +44,15 @@ public class ZCodeSaver {
 		this.dependencyManager = dependencyManager;
 	}
 
-	private String getClassCode(ZNode zNode) {
-		final StringBuilder builder = new StringBuilder(zNode.code);
-		int end = languageParser.usesBraces() ? builder.lastIndexOf("}")
-				: builder.length();
+	private List<String> getClassCode(ZNode zNode) {
+		final List<String> code = new LinkedList<String>(zNode.getCodeLines());
+		int end = zNode.getEndLineNumber(languageParser);
 
-		if (end > 0) {
-			end--;
-		} else {
-			end = 0;
-		}
-		for (ZNode method : zNode.dependencies) {
-			builder.insert(end, "\n\n" + method.code);
+		for (ZNode method : zNode.submodules) {
+			code.addAll(end, method.getCodeLines());
 		}
 
-		return builder.toString();
+		return code;
 	}
 
 	public void save(ZNode zNode) {
@@ -70,17 +68,17 @@ public class ZCodeSaver {
 				zNode.parentFile = new File(zNode.parentFile, dir);
 				zNode.parentFile.mkdirs(); // make dirs
 			}
-			if (zNode.code.trim().length() == 0) {
-				zNode.code = languageParser.getPackageKeyword() + " "
+			if (zNode.isCodeEmpty()) {
+				zNode.replaceCode(languageParser.getPackageKeyword() + " "
 						+ zNode.name.replaceAll("\\W", ".")
-						+ (languageParser.requiresSemicolon() ? ";" : "");
+						+ (languageParser.requiresSemicolon() ? ";" : ""));
 			}
 			save(new File(zNode.parentFile, languageParser.getPackageFilename()),
-					zNode.code);
+					zNode.getCodeLines());
 			break;
 		case MODULE:
 		case DEPENDENCY:
-			if (zNode.code != null && zNode.code.length() > 0) {
+			if (!zNode.isCodeEmpty()) {
 				dependencyManager.save(zNode);
 			}
 			break;
@@ -113,11 +111,16 @@ public class ZCodeSaver {
 				if (n > start && n < end) {
 					// skip these lines
 				} else if (n == start) {
-					FileUtils.write(temp, zNode.code + "\n", true);
+					FileUtils.writeLines(temp, zNode.getCodeLines(), true);
+					if (start == end) { // new method
+						FileUtils.writeLines(temp, asList(line), true);
+					}
 				} else
-					FileUtils.write(temp, line + "\n", true);
+					FileUtils.writeLines(temp, asList(line), true);
 			}
 			iter.close();
+			zNode.extension = start + "-" + (start + zNode.getCodeLineSize());
+
 			if (!classFile.delete() || !temp.renameTo(classFile)) {
 				throw new RuntimeException("rename failed!");
 			}
@@ -128,9 +131,9 @@ public class ZCodeSaver {
 		}
 	}
 
-	public void save(File file, String data) {
+	public void save(File file, List<String> data) {
 		try {
-			FileUtils.writeStringToFile(file, data, encoding);
+			FileUtils.writeLines(file, encoding, data);
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}

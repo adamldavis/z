@@ -6,6 +6,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -256,7 +257,7 @@ public class MavenDependencyManager implements DependencyManager {
 			if (zNode.zNodeType == ZNodeType.DEPENDENCY) {
 				saveDependencyNode(zNode, doc, deps);
 			} else {
-				unflatten(doc, zNode.code, doc.getDocumentElement());
+				unflatten(doc, zNode.getCodeLines(), doc.getDocumentElement());
 			}
 			if (fis != null) {
 				fis.close();
@@ -291,9 +292,9 @@ public class MavenDependencyManager implements DependencyManager {
 			}
 		}
 		if (dependency == null) {
-			deps.appendChild(unflatten(doc, zNode.code));
+			deps.appendChild(unflatten(doc, zNode.getCodeLines()));
 		} else {
-			deps.replaceChild(unflatten(doc, zNode.code), dependency);
+			deps.replaceChild(unflatten(doc, zNode.getCodeLines()), dependency);
 		}
 	}
 
@@ -310,13 +311,11 @@ public class MavenDependencyManager implements DependencyManager {
 		fos.close();
 	}
 
-	Element unflatten(Document doc, String code) {
-		return unflatten(doc, code, doc.createElement(DEPENDENCY));
+	Element unflatten(Document doc, Collection<String> lines) {
+		return unflatten(doc, lines, doc.createElement(DEPENDENCY));
 	}
 
-	Element unflatten(Document doc, String code, final Element node) {
-		final String[] lines = code.split("[\n\r]+");
-
+	Element unflatten(Document doc, Collection<String> lines, final Element node) {
 		for (String line : lines) {
 			unflatten(doc, node, line);
 		}
