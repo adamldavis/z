@@ -4,10 +4,12 @@ import java.awt.BorderLayout;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 
-import javax.swing.JEditorPane;
 import javax.swing.JFrame;
+import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.SwingUtilities;
+
+import neoe.ne.TopCoderEditorPlugin;
 
 import com.adamldavis.z.api.APIFactory;
 
@@ -15,15 +17,18 @@ public class ZCodeEditor extends JFrame {
 
 	private static final long serialVersionUID = 1L;
 
-	final JEditorPane editor;
+	final JPanel editor;
 
 	private ZNode zNode;
 
 	private final APIFactory apiFactory;
+	
+	private final TopCoderEditorPlugin plugin = new TopCoderEditorPlugin();
 
 	public ZCodeEditor(ZNode zNode, APIFactory apiFactory) {
 		super("Z code editor:" + zNode);
-		editor = new JEditorPane("text/plain", apiFactory.getCodeFormatter()
+		editor = plugin.getEditorPanel(); 
+		plugin.setSource(apiFactory.getCodeFormatter()
 				.format(zNode.getCode()));
 		JScrollPane scrollPane = new JScrollPane(editor);
 		this.getRootPane().setLayout(new BorderLayout());
@@ -54,7 +59,7 @@ public class ZCodeEditor extends JFrame {
 
 	public void save() {
 		System.out.println("Saving: " + zNode);
-		zNode.replaceCode(editor.getText());
+		zNode.replaceCode(plugin.getSource());
 		new ZCodeSaver(apiFactory).save(zNode);
 	}
 
