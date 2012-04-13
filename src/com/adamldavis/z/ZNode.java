@@ -165,6 +165,9 @@ public class ZNode {
 
 	public int getEndLineNumber(LanguageParser languageParser) {
 		int i = code.size() - 1;
+		if (code.isEmpty()) {
+			return 0;
+		}
 
 		if (languageParser.usesBraces()) {
 			for (; code.get(i).indexOf("}") < 0 && i > 0; i--)
