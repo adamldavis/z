@@ -58,8 +58,11 @@ public class ZCodeSaver {
 	public void save(ZNode zNode) {
 		switch (zNode.zNodeType) {
 		case CLASS:
-			save(new File(zNode.parentFile, zNode.name + "." + zNode.extension),
-					getClassCode(zNode));
+			if ("".equals(zNode.extension)) {
+				zNode.extension = languageParser.getValidFileExtensions().get(0);
+			}
+			String filename = zNode.name + "." + zNode.extension;
+			save(new File(zNode.parentFile, filename), getClassCode(zNode));
 			break;
 		case PACKAGE:
 			String dir = zNode.name.replace('.', File.separatorChar);
