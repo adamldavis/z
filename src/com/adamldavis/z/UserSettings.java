@@ -7,7 +7,12 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Properties;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class UserSettings {
+	
+	private static final Logger log = LoggerFactory.getLogger(UserSettings.class);
 
 	public static final String DIRECTION = "direction";
 
@@ -31,9 +36,9 @@ public class UserSettings {
 			}
 		} catch (FileNotFoundException e) {
 			// that's okay
-			System.out.println("Warning: no .z file");
+			log.warn("no .z file");
 		} catch (IOException e) {
-			throw new RuntimeException(e);
+			log.error(e.getMessage(), e);
 		}
 	}
 
@@ -55,7 +60,7 @@ public class UserSettings {
 				props.store(new FileWriter(new File(home, Z)), "");
 			}
 		} catch (IOException e) {
-			throw new RuntimeException(e);
+			log.error(e.getMessage());
 		}
 	}
 

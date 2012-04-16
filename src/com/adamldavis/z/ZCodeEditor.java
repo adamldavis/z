@@ -9,6 +9,9 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.SwingUtilities;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import neoe.ne.TopCoderEditorPlugin;
 
 import com.adamldavis.z.api.APIFactory;
@@ -16,6 +19,8 @@ import com.adamldavis.z.api.APIFactory;
 public class ZCodeEditor extends JFrame {
 
 	private static final long serialVersionUID = 1L;
+	
+	private static final Logger log = LoggerFactory.getLogger(ZCodeEditor.class);
 
 	final JPanel editor;
 
@@ -33,7 +38,6 @@ public class ZCodeEditor extends JFrame {
 		JScrollPane scrollPane = new JScrollPane(editor);
 		this.getRootPane().setLayout(new BorderLayout());
 		this.getRootPane().add(scrollPane);
-		this.setAlwaysOnTop(true);
 		this.setVisible(true);
 		this.zNode = zNode;
 		this.apiFactory = apiFactory;
@@ -58,7 +62,7 @@ public class ZCodeEditor extends JFrame {
 	}
 
 	public void save() {
-		System.out.println("Saving: " + zNode);
+		log.info("Saving: {}", zNode);
 		zNode.replaceCode(plugin.getSource());
 		new ZCodeSaver(apiFactory).save(zNode);
 	}

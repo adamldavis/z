@@ -24,6 +24,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.adamldavis.swing.Display2d;
 import com.adamldavis.z.SmoothAnimator.AnimationType;
 import com.adamldavis.z.ZNode.ZNodeType;
@@ -58,6 +61,8 @@ public class Z extends Display2d {
 	enum Direction {
 		LR, RL, UP, DOWN
 	}
+	
+	private static final Logger log = LoggerFactory.getLogger(Z.class);
 
 	public static void main(String[] args) {
 		new Z();
@@ -118,7 +123,7 @@ public class Z extends Display2d {
 
 			@Override
 			public void mousePressed(MouseEvent e) {
-				System.out.println("pressed: " + e);
+				log.info("pressed: " + e);
 				if (e.getButton() != MouseEvent.BUTTON3) {
 					point1 = e.getPoint();
 				}
@@ -138,7 +143,7 @@ public class Z extends Display2d {
 
 			@Override
 			public void mouseReleased(MouseEvent e) {
-				System.out.println("released: " + e);
+				log.info("released: " + e);
 				if (point1 != null && point2 != null) {
 					ZNode z = findZNodeAt(e.getPoint());
 					if (z == null) {
@@ -220,7 +225,7 @@ public class Z extends Display2d {
 	}
 
 	protected void dragged(ZNode z) {
-		System.out.println("dragged: " + z);
+		log.info("dragged: " + z);
 		// create dependency on z?
 		selectedNode.dependencies.add(z);
 	}
@@ -234,7 +239,7 @@ public class Z extends Display2d {
 	ZNodePositioner nodePositioner;
 
 	protected void clicked(ZNode node) {
-		System.out.println("selected: " + node);
+		log.info("selected: " + node);
 		selectedNode = new ZCodeLoader(apiFactory).load(node);
 		zNodes.clear();
 		zNodes.add(selectedNode);
