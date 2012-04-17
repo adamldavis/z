@@ -49,7 +49,7 @@ public class DirectionZNodePositioner implements ZNodePositioner {
 		case UP:
 			for (ZNode node : map.keySet()) {
 				Point2D p = map.get(node);
-				p.setLocation(-1 * p.getY(), p.getX());
+				p.setLocation(p.getY(), -1 * p.getX());
 			}
 			break;
 		default:
