@@ -14,6 +14,7 @@ import java.awt.event.MouseMotionAdapter;
 import java.awt.geom.Point2D;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -61,7 +62,7 @@ public class Z extends Display2d {
 	enum Direction {
 		LR, RL, UP, DOWN
 	}
-	
+
 	private static final Logger log = LoggerFactory.getLogger(Z.class);
 
 	public static void main(String[] args) {
@@ -87,7 +88,7 @@ public class Z extends Display2d {
 
 	ZNode menu = new ZNode(500, 100, "MENU");
 
-	ZMenu zMenu = new ZMenu(Z.this, new ActionListener() {
+	final ZMenu zMenu = new ZMenu(Z.this, new ActionListener() {
 
 		@Override
 		public void actionPerformed(ActionEvent e) {
@@ -107,8 +108,8 @@ public class Z extends Display2d {
 		menu.zNodeType = ZNodeType.METHOD;
 		goUp.zNodeType = ZNodeType.METHOD;
 		goUp.replaceCode("go up");
-		menu.location.x = width / 2 - size;
-		goUp.location.x = menu.location.x + size;
+		menu.location.x = width / 2 - size / 2;
+		goUp.location.x = menu.location.x + size + 2;
 
 		this.addMouseMotionListener(new MouseMotionAdapter() {
 
@@ -133,10 +134,11 @@ public class Z extends Display2d {
 						clicked(z);
 					} else {
 						// new code editor
-						ZCodeEditor editor = new ZCodeEditor(selectedNode,
-								apiFactory);
+						ZCodeEditor editor = new ZCodeEditor(z, apiFactory);
 						editor.setSize(width / 2, height / 2);
-						editor.setLocation(width / 4, height / 4);
+						Point point = Z.this.getLocationOnScreen();
+						editor.setLocation(point.x + width / 4, point.y
+								+ height / 4);
 					}
 				}
 			}
@@ -175,8 +177,7 @@ public class Z extends Display2d {
 						if (dep != null)
 							selectedNode.dependencies.add(dep);
 					}
-				} else
-					clicked(z);
+				}
 			}
 		});
 	}
@@ -195,10 +196,16 @@ public class Z extends Display2d {
 	}
 
 	protected void activateGoUp() {
-		final File pFile = selectedNode.parentFile;
-		selectedNode = new ZCodeLoader(apiFactory)
-				.load((selectedNode.zNodeType == ZNodeType.PACKAGE) ? pFile
-						.getParentFile() : pFile);
+		File pFile = selectedNode.parentFile;
+		
+		if (selectedNode.zNodeType == ZNodeType.PACKAGE) {
+			for (int i = 0; i < selectedNode.name.split("\\.").length; i++) {
+				pFile = pFile.getParentFile();
+			}
+		} else if (selectedNode.zNodeType == ZNodeType.MODULE) {
+			pFile = pFile.getParentFile();
+		}
+		selectedNode = new ZCodeLoader(apiFactory).load(pFile);
 		clicked(selectedNode);
 	}
 
@@ -264,8 +271,7 @@ public class Z extends Display2d {
 				case ALPHA:
 					return node1.name.compareTo(node2.name);
 				case SIZE:
-					return node1.getCodeLineSize()
-							- node2.getCodeLineSize();
+					return node1.getCodeLineSize() - node2.getCodeLineSize();
 				case TIME:
 					return (int) (node1.getLastModified() - node2
 							.getLastModified());
@@ -310,7 +316,6 @@ public class Z extends Display2d {
 			return;
 		}
 		final float time = aniCount.get() / 100f;
-
 		for (ZNode node : zNodes) {
 			if (state == State.ANIMATING) {
 				if (pointMap.containsKey(node)) {
@@ -328,8 +333,9 @@ public class Z extends Display2d {
 		if (point1 != null && point2 != null) {
 			drawLine(g2d, point1.x, point1.y, point2.x, point2.y);
 		}
-		menu.draw(g2d, size, Color.GREEN);
-		goUp.draw(g2d, size, Color.GREEN);
+		for (ZNode menuNode : Arrays.asList(menu, goUp)) {
+			menuNode.draw(g2d, size, Color.GREEN);
+		}
 	}
 
 	private void updateCount() {
