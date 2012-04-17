@@ -1,6 +1,7 @@
 package com.adamldavis.z.api;
 
 import java.io.File;
+import java.util.Collection;
 import java.util.List;
 
 import com.adamldavis.z.ZNode;
@@ -18,6 +19,8 @@ public interface LanguageParser {
 	List<ZNode> getMethods(File file);
 
 	String getNonMethodPart(File file);
+	
+	Collection<ZNode> loadImports(File file);
 
 	boolean requiresSemicolon();
 

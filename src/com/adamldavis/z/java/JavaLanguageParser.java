@@ -7,7 +7,14 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.LineIterator;
 
 import com.adamldavis.z.ZNode;
 import com.adamldavis.z.ZNode.ZNodeType;
@@ -303,6 +310,43 @@ public class JavaLanguageParser implements LanguageParser {
 	@Override
 	public String getPackageFilename() {
 		return "package-info.java";
+	}
+
+	public Collection<ZNode> loadImports(File file) {
+		final Collection<ZNode> imports = new LinkedList<ZNode>();
+		final Map<String, List<String>> map = new LinkedHashMap<String, List<String>>();
+		try {
+			final LineIterator iter = FileUtils.lineIterator(file);
+
+			for (String line = iter.next(); iter.hasNext(); line = iter.next()) {
+				final String keyword = getImportKeyword();
+
+				if (line.startsWith(keyword)) {
+					String pack = line.substring(keyword.length()).trim();
+					String key = pack.substring(0, pack.lastIndexOf('.'));
+
+					if (pack.charAt(pack.length() - 1) == ';') {
+						pack = pack.substring(0, pack.length() - 1);
+					}
+					final List<String> list = map.get(key);
+					if (list == null) {
+						map.put(key, new LinkedList<String>(asList(pack)));
+					} else{
+						list.add(pack);
+					}
+				}
+			}
+			for (String key : map.keySet()) {
+				final ZNode node = new ZNode(ZNodeType.DEPENDENCY, key, key,
+						"", file.lastModified());
+				node.setCode(map.get(key));
+				imports.add(node);
+			}
+			iter.close();
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+		return imports;
 	}
 
 }
