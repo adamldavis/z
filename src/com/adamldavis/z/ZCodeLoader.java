@@ -8,9 +8,11 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedList;
 import java.util.List;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.LineIterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -120,11 +122,11 @@ public class ZCodeLoader {
 						return name.equals(languageParser.getPackageFilename());
 					}
 				})) {
-			node.setLastModified(packageInfo.lastModified());
 			try {
-				node.setCode(FileUtils.readLines(file));
+				node.setLastModified(packageInfo.lastModified());
+				node.setCode(FileUtils.readLines(packageInfo));
 			} catch (IOException e) {
-				throw new RuntimeException(e);
+				log.error(e.getMessage(), e);
 			}
 		}
 		return node;
@@ -159,6 +161,8 @@ public class ZCodeLoader {
 				method.parentFile = file;
 			}
 			node.submodules.addAll(methods);
+			node.dependencies.clear();
+			node.dependencies.addAll(languageParser.loadImports(file));
 			break;
 		case MODULE:
 			node.submodules.addAll(loadPackages(node.parentFile));
@@ -172,30 +176,33 @@ public class ZCodeLoader {
 	}
 
 	private Collection<? extends ZNode> loadClassFiles(File directory) {
-		final List<ZNode> nodes = new ArrayList<ZNode>(directory.list().length);
-		File[] files = directory.listFiles(new FileFilter() {
+		final List<ZNode> nodes = new LinkedList<ZNode>();
+		final File[] classFiles = directory.listFiles(new FileFilter() {
 
 			@Override
 			public boolean accept(File file) {
-				String name = file.getName();
+				final String name = file.getName();
 
-				if (name.contains(".")) {
+				if (file.isFile() && name.contains(".")) {
 					String ext = name.substring(name.lastIndexOf('.') + 1);
 
-					if (languageParser.getValidFileExtensions().contains(ext)) {
+					if (languageParser.getValidFileExtensions().contains(ext)
+							&& !languageParser.getPackageFilename()
+									.equals(name)) {
 						return true;
 					}
 				}
 				return false;
 			}
 		});
-		for (File file : files) {
+		for (File file : classFiles) {
 			nodes.add(loadFile(file, false));
 		}
 
 		return nodes;
 	}
 
+	/** Loads a class file or gets the package-name from it. */
 	public ZNode loadFile(File file, boolean getPackage) {
 		final String name = file.getName();
 		final ZNode node = new ZNode(ZNodeType.CLASS, name, "", "",
@@ -249,4 +256,5 @@ public class ZCodeLoader {
 		}
 		return node;
 	}
+
 }
