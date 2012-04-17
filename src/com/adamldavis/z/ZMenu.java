@@ -9,6 +9,7 @@ import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 
+import com.adamldavis.z.Z.Direction;
 import com.adamldavis.z.Z.NodeLayout;
 import com.adamldavis.z.Z.SortOrder;
 
@@ -21,6 +22,7 @@ public class ZMenu extends JFrame {
 		final JMenu fileMenu = new JMenu("File");
 		final JMenu sorting = new JMenu("Sorting");
 		final JMenu layout = new JMenu("Layout");
+		final JMenu direction = new JMenu("Direction");
 		
 		fileMenu.add("Open...").addActionListener(new ActionListener() {
 			@Override
@@ -105,11 +107,45 @@ public class ZMenu extends JFrame {
 						actionListener.actionPerformed(e);
 					}
 				});
+		
+		direction.add("Left-to-Right").addActionListener(
+				new ActionListener() {
+					@Override
+					public void actionPerformed(ActionEvent e) {
+						z.direction = Direction.LR;
+						actionListener.actionPerformed(e);
+					}
+				});
+		direction.add("Right-to-Left").addActionListener(
+				new ActionListener() {
+					@Override
+					public void actionPerformed(ActionEvent e) {
+						z.direction = Direction.RL;
+						actionListener.actionPerformed(e);
+					}
+				});
+		direction.add("Down").addActionListener(
+				new ActionListener() {
+					@Override
+					public void actionPerformed(ActionEvent e) {
+						z.direction = Direction.DOWN;
+						actionListener.actionPerformed(e);
+					}
+				});
+		direction.add("Up").addActionListener(
+				new ActionListener() {
+					@Override
+					public void actionPerformed(ActionEvent e) {
+						z.direction = Direction.UP;
+						actionListener.actionPerformed(e);
+					}
+				});
 
 		JMenuBar bar = new JMenuBar();
 		bar.add(fileMenu);
 		bar.add(sorting);
 		bar.add(layout);
+		bar.add(direction);
 		super.setJMenuBar(bar);
 		super.setAlwaysOnTop(true);
 		super.setSize(200, 25);
