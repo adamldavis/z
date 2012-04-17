@@ -2,7 +2,9 @@ package com.adamldavis.z;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
+import java.awt.GradientPaint;
 import java.awt.Graphics2D;
+import java.awt.Point;
 import java.awt.geom.Point2D;
 import java.io.File;
 import java.util.ArrayList;
@@ -103,8 +105,16 @@ public class ZNode {
 			g2d.drawString(name, x - 1, y - 1);
 		}
 		if (code != null) {
+			Point point2 = new Point(x + isize + 1, y + isize / 2);
 			g2d.setFont(g2d.getFont().deriveFont(10f));
-			g2d.drawString(code.isEmpty() ? "" : code.get(0), x + 10, y + 10);
+			g2d.setPaint(new GradientPaint(location, color, point2, Color.BLACK));
+			int i = 1;
+			for (String line : code) {
+				g2d.drawString(line.substring(0, Math.min(20, line.length())),
+						x + 5, y + 10 * i);
+				if (i++ > 3)
+					break;
+			}
 		}
 	}
 
@@ -139,7 +149,7 @@ public class ZNode {
 
 	private void setCode(String code) {
 		this.code.clear();
-		this.code.addAll(Arrays.asList(code.split("[\n\r]{1,2}")));
+		this.code.addAll(Arrays.asList(code.split("(\n\r)|\n")));
 	}
 
 	public void setCode(Collection<String> code) {
