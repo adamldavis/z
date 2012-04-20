@@ -10,12 +10,12 @@ public class BloomZNodePositioner extends AbstractZNodePositioner {
 
 	@Override
 	protected Point2D getDependencyPosition(ZNode node, int index, int size) {
-		return getXPoint(1.5, index, size);
+		return getXPoint(-1.5, index, size);
 	}
 
 	@Override
 	protected Point2D getSubmodulePosition(ZNode node, int index, int size) {
-		return getXPoint(0.5, index, size);
+		return getXPoint(-0.5, index, size);
 	}
 
 	private Point2D getXPoint(final double start, int index, int size) {
@@ -33,7 +33,7 @@ public class BloomZNodePositioner extends AbstractZNodePositioner {
 		int smin = Math.min(maxSize, size);
 		final double smin1 = smin + 1.0;
 
-		return Math.PI * (start - (1.0 / smin1) - (index % maxSize / smin1));
+		return Math.PI * (start + (1.0 / smin1) + (index % maxSize / smin1));
 	}
 
 }
