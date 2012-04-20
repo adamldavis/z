@@ -11,10 +11,11 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
+import java.awt.event.MouseWheelEvent;
+import java.awt.event.MouseWheelListener;
 import java.awt.geom.Point2D;
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -84,10 +85,6 @@ public class Z extends Display2d {
 
 	UserSettings settings = new UserSettings();
 
-	ZNode goUp = new ZNode(600, 100, "^");
-
-	ZNode menu = new ZNode(500, 100, "MENU");
-
 	final ZMenu zMenu = new ZMenu(Z.this, new ActionListener() {
 
 		@Override
@@ -103,14 +100,25 @@ public class Z extends Display2d {
 
 	public Z() {
 		super(false, 2, 33);
-
+		setTitle("Z");
 		loadSettings();
-		menu.zNodeType = ZNodeType.METHOD;
-		goUp.zNodeType = ZNodeType.METHOD;
-		goUp.replaceCode("go up");
-		menu.location.x = width / 2 - size / 2;
-		goUp.location.x = menu.location.x + size + 2;
 
+		this.addMouseWheelListener(new MouseWheelListener() {
+
+			@Override
+			public void mouseWheelMoved(MouseWheelEvent e) {
+				log.debug("zoom:" + e.getWheelRotation());
+				if (selectedNode != null) {
+					if (e.getWheelRotation() > 0 && size > 5f) {
+						size /= 2f;
+					} else if (e.getWheelRotation() < 0 && size < width) {
+						size *= 2f;
+					}
+					log.debug("Size:" + size);
+					clicked(selectedNode);
+				}
+			}
+		});
 		this.addMouseMotionListener(new MouseMotionAdapter() {
 
 			@Override
@@ -160,17 +168,13 @@ public class Z extends Display2d {
 			@Override
 			public void mouseClicked(MouseEvent e) {
 				final Point p = e.getPoint();
-
-				if (menu.location.distance(p.x, p.y) < size * 0.5) {
-					activateMenu(e);
-					return;
-				} else if (goUp.location.distance(p.x, p.y) < size * 0.5) {
-					activateGoUp();
-					return;
-				}
 				ZNode z = findZNodeAt(p);
+
 				if (z == null) {
-					if (selectedNode == null) {
+					zMenu.setVisible(false);
+					if (e.getButton() == MouseEvent.BUTTON3) {
+						activateMenu(e);
+					} else if (selectedNode == null) {
 						selectedNode = createNewZ(p, ZNodeType.MODULE);
 					} else {
 						final ZNode dep = createNewZ(p, ZNodeType.DEPENDENCY);
@@ -195,9 +199,9 @@ public class Z extends Display2d {
 		});
 	}
 
-	protected void activateGoUp() {
+	public void activateGoUp() {
 		File pFile = selectedNode.parentFile;
-		
+
 		if (selectedNode.zNodeType == ZNodeType.PACKAGE) {
 			for (int i = 0; i < selectedNode.name.split("\\.").length; i++) {
 				pFile = pFile.getParentFile();
@@ -310,7 +314,8 @@ public class Z extends Display2d {
 		g2d.addRenderingHints(new RenderingHints(
 				RenderingHints.KEY_ANTIALIASING,
 				RenderingHints.VALUE_ANTIALIAS_ON));
-		g2d.setColor(Color.black);
+		g2d.setBackground(Color.BLACK);
+		g2d.setColor(g2d.getBackground());
 		g2d.fillRect(0, 0, width, height);
 		if (zNodes == null) {
 			return;
@@ -332,9 +337,6 @@ public class Z extends Display2d {
 		}
 		if (point1 != null && point2 != null) {
 			drawLine(g2d, point1.x, point1.y, point2.x, point2.y);
-		}
-		for (ZNode menuNode : Arrays.asList(menu, goUp)) {
-			menuNode.draw(g2d, size, Color.GREEN);
 		}
 	}
 
