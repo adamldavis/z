@@ -54,8 +54,9 @@ public class JavaLanguageParser implements LanguageParser {
 				"instanceof", "implements", "extends", "import", "return",
 				"void", "null", "if", "else", "while", "for", "do", "true",
 				"false", "enum", "static", "transient", "volatile", "package",
-				"switch", "default", "boolean", "byte", "int", "float",
-				"double", "char", "long");
+				"switch", "case", "default", "boolean", "byte", "int", "float",
+				"double", "char", "long", "try", "catch", "throw", "throws",
+				"this", "super");
 	}
 
 	@Override
@@ -64,7 +65,7 @@ public class JavaLanguageParser implements LanguageParser {
 	}
 
 	@Override
-	public boolean usesParens() {
+	public boolean requiresParens() {
 		return true;
 	}
 
@@ -331,7 +332,7 @@ public class JavaLanguageParser implements LanguageParser {
 					final List<String> list = map.get(key);
 					if (list == null) {
 						map.put(key, new LinkedList<String>(asList(pack)));
-					} else{
+					} else {
 						list.add(pack);
 					}
 				}

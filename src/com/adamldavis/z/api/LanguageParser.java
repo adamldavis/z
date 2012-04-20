@@ -26,7 +26,7 @@ public interface LanguageParser {
 
 	boolean usesBraces();
 
-	boolean usesParens();
+	boolean requiresParens();
 
 	/** File used by package for comments (package-info.java in Java). */
 	String getPackageFilename();
