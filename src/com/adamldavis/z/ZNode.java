@@ -79,39 +79,57 @@ public class ZNode {
 		final int x = (int) (location.x - size * 0.5);
 		final int y = (int) (location.y - size * 0.5);
 		final int isize = (int) size;
-		g2d.setColor(color);
+
+		g2d.setColor(g2d.getBackground());
 		switch (zNodeType) {
 		case CLASS:
+			g2d.fillRect(x, y, isize, isize);
+			g2d.setColor(color);
 			g2d.drawRect(x, y, isize, isize);
 			break;
 		case METHOD:
+			g2d.fillRect(x, y, isize, (int) (isize * 0.75));
+			g2d.setColor(color);
 			g2d.drawRect(x, y, isize, (int) (isize * 0.75));
 			break;
 		case MODULE:
+			g2d.fillOval(x + 1, y + 1, isize - 2, isize - 2);
+			g2d.setColor(color);
 			g2d.drawOval(x, y, isize, isize);
 			break;
 		case PACKAGE:
+			g2d.fillOval(x, y, isize, (int) (isize * 0.75));
+			g2d.setColor(color);
 			g2d.drawOval(x, y, isize, (int) (isize * 0.75));
 			break;
 		case DEPENDENCY:
+			g2d.fillOval(x + 1, y + 1, isize - 2, isize - 2);
 			// draw dotted line circle:
-			for (int i = 0; i < 36; i++) {
-				g2d.drawArc(x, y, isize, isize, i * 10, 5);
+			if (isize > 20) {
+				g2d.setColor(color);
+				for (int i = 0; i < 20; i++) {
+					g2d.drawArc(x, y, isize, isize, i * 18, 8);
+				}
+			} else {
+				g2d.setColor(color.darker());
+				g2d.drawOval(x, y, isize, isize);
 			}
 			break;
 		}
 		if (name != null) {
-			g2d.setFont(g2d.getFont().deriveFont(14f));
+			g2d.setFont(g2d.getFont().deriveFont(Math.max(size * 16 / 80, 5)));
 			g2d.drawString(name, x - 1, y - 1);
 		}
 		if (code != null) {
 			Point point2 = new Point(x + isize + 1, y + isize / 2);
-			g2d.setFont(g2d.getFont().deriveFont(10f));
-			g2d.setPaint(new GradientPaint(location, color, point2, Color.BLACK));
+			final float codeSize = Math.max(size * 1 / 8, 5);
+			g2d.setFont(g2d.getFont().deriveFont(codeSize));
+			g2d.setPaint(new GradientPaint(location, color.darker(), point2,
+					Color.BLACK));
 			int i = 1;
 			for (String line : code) {
 				g2d.drawString(line.substring(0, Math.min(20, line.length())),
-						x + 5, y + 10 * i);
+						x + 5, y + codeSize * i);
 				if (i++ > 3)
 					break;
 			}
@@ -133,7 +151,8 @@ public class ZNode {
 		}
 	}
 
-	// code related method
+	// code related methods
+
 	/** Is code empty? */
 	public boolean isCodeEmpty() {
 		return code.isEmpty();
