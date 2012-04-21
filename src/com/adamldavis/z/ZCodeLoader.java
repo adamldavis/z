@@ -12,7 +12,6 @@ import java.util.LinkedList;
 import java.util.List;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.LineIterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -249,7 +248,7 @@ public class ZCodeLoader {
 				try {
 					reader.close();
 				} catch (IOException e) {
-					System.err.println("Error closing file: " + e);
+					log.error("Error closing file: " + e.getMessage(), e);
 					throw new RuntimeException(e);
 				}
 			}
