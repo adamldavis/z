@@ -51,14 +51,21 @@ public class ZCodeLoader {
 				List<ZNode> deps = dependencyManager.getDependencies(file);
 
 				ZNode node = new ZNode(ZNodeType.MODULE,
-						dependencyManager.getProjectName(file), "", "xml",
-						file.lastModified());
+						dependencyManager.getProjectName(file), "", "xml", file);
 				node.dependencies.addAll(deps);
 				node.parentFile = file.getParentFile();
 				node.replaceCode(dependencyManager.loadCode(file));
 				final File src = dependencyManager.getSourceFolder(file);
 
-				if (src != null) {
+				if (src == null) {
+					for (File f : file.getParentFile().listFiles()) {
+						if (f.isDirectory()) {
+							node.submodules.add(load(f));
+						} else if (f.isFile()) {
+							// TODO: load a file?
+						}
+					}
+				} else {
 					node.submodules.addAll(loadPackages(src));
 				}
 				for (ZNode pack : node.submodules) {
@@ -66,7 +73,7 @@ public class ZCodeLoader {
 				}
 				return node;
 			}
-			return loadFile(file, false);
+			return loadClassFile(file);
 		} else if (file.isDirectory()) {
 
 			for (File f : file.listFiles()) {
@@ -112,7 +119,7 @@ public class ZCodeLoader {
 	}
 
 	private ZNode loadPackage(File file) {
-		final ZNode node = loadFile(file, true);
+		final ZNode node = loadPackageFromFile(file);
 
 		for (File packageInfo : file.getParentFile().listFiles(
 				new FilenameFilter() {
@@ -195,27 +202,36 @@ public class ZCodeLoader {
 			}
 		});
 		for (File file : classFiles) {
-			nodes.add(loadFile(file, false));
+			nodes.add(loadClassFile(file));
 		}
 
 		return nodes;
 	}
 
 	/** Loads a class file or gets the package-name from it. */
-	public ZNode loadFile(File file, boolean getPackage) {
+	public ZNode loadClassFile(File file) {
 		final String name = file.getName();
-		final ZNode node = new ZNode(ZNodeType.CLASS, name, "", "",
-				file.lastModified());
+		final ZNode node = new ZNode(ZNodeType.CLASS, name, "", "", file);
 		node.parentFile = file.getParentFile();
 
 		if (name.contains(".")) {
 			node.extension = name.substring(name.lastIndexOf('.') + 1);
 			node.name = name.substring(0, name.lastIndexOf('.'));
 		}
-		if (!getPackage) {
-			node.replaceCode(languageParser.getNonMethodPart(file));
-			node.replaceCode(codeFormatter.format(node.getCode()));
-			return node;
+		node.replaceCode(languageParser.getNonMethodPart(file));
+		node.replaceCode(codeFormatter.format(node.getCode()));
+		return node;
+	}
+
+	/** Gets the package-name from it. */
+	public ZNode loadPackageFromFile(File file) {
+		final String name = file.getName();
+		final ZNode node = new ZNode(ZNodeType.PACKAGE, name, "", "", file);
+		node.parentFile = file.getParentFile();
+
+		if (name.contains(".")) {
+			node.extension = name.substring(name.lastIndexOf('.') + 1);
+			node.name = name.substring(0, name.lastIndexOf('.'));
 		}
 		FileReader reader = null;
 
@@ -228,14 +244,12 @@ public class ZCodeLoader {
 				if (line == null) {
 					break;
 				}
-				if (getPackage
-						&& line.startsWith(languageParser.getPackageKeyword())) {
+				if (line.startsWith(languageParser.getPackageKeyword())) {
 					String pack = line
 							.substring(
 									languageParser.getPackageKeyword().length() + 1)
 							.trim().replace(";", "");
 
-					node.zNodeType = ZNodeType.PACKAGE;
 					node.name = pack;
 					node.extension = "";
 					return node;

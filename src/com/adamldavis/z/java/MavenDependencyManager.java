@@ -107,7 +107,7 @@ public class MavenDependencyManager implements DependencyManager {
 		return builder;
 	}
 
-	private List<ZNode> getDependencies(Document doc, long lastModified,
+	private List<ZNode> getDependencies(Document doc, File file,
 			final List<ZNode> list) throws ParserConfigurationException,
 			SAXException, IOException, FileNotFoundException {
 
@@ -126,7 +126,7 @@ public class MavenDependencyManager implements DependencyManager {
 				final String artifaceId = getNodeContent(ARTIFACT_ID, dep);
 
 				list.add(new ZNode(ZNodeType.DEPENDENCY, artifaceId,
-						flatten(dep), "xml", lastModified));
+						flatten(dep), "xml", file));
 			}
 		}
 		return list;
@@ -145,7 +145,7 @@ public class MavenDependencyManager implements DependencyManager {
 							throws ParserConfigurationException, SAXException,
 							IOException, FileNotFoundException {
 						final List<ZNode> dependencies = getDependencies(doc,
-								lastModified, list);
+								dependencyFile, list);
 
 						for (ZNode node : dependencies) {
 							node.parentFile = dependencyFile.getParentFile();

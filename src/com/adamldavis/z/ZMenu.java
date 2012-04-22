@@ -168,6 +168,7 @@ public class ZMenu extends JFrame {
 	private JMenu makeFileMenu(final Z z, final ActionListener actionListener) {
 		final JMenu fileMenu = new JMenu("File");
 		fileMenu.add("Open...").addActionListener(new ActionListener() {
+
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				final JFileChooser chooser = new JFileChooser();
@@ -178,7 +179,7 @@ public class ZMenu extends JFrame {
 
 				File file = chooser.getSelectedFile();
 				if (file != null) {
-					z.selectedNode = new ZCodeLoader(z.apiFactory).load(file);
+					z.selectedNode = z.load(file);
 					z.settings.setProperty(UserSettings.LAST_LOCATION,
 							file.getAbsolutePath());
 				}

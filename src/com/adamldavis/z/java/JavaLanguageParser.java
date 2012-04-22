@@ -132,7 +132,7 @@ public class JavaLanguageParser implements LanguageParser {
 				}
 				if (!inMethod && braceDepth >= 1 && isMethodSig(code)) {
 					methods.add(new ZNode(ZNodeType.METHOD, toMethodName(code),
-							code.toString(), "", file.lastModified()));
+							code.toString(), "", file));
 					inMethod = true;
 				}
 			}
@@ -339,7 +339,7 @@ public class JavaLanguageParser implements LanguageParser {
 			}
 			for (String key : map.keySet()) {
 				final ZNode node = new ZNode(ZNodeType.DEPENDENCY, key, key,
-						"", file.lastModified());
+						"", file);
 				node.setCode(map.get(key));
 				imports.add(node);
 			}

@@ -56,7 +56,11 @@ public class RakeGemManager implements DependencyManager {
 	 */
 	@Override
 	public File getSourceFolder(File dependencyFile) {
-		return dependencyFile.getParentFile();
+		File lib = new File(dependencyFile.getParentFile(), "lib");
+		if (lib.isDirectory()) {
+			return lib;
+		}
+		return null;
 	}
 
 	/*
@@ -79,7 +83,7 @@ public class RakeGemManager implements DependencyManager {
 						final String name = line.substring(i + 1, end);
 
 						dependencies.add(new ZNode(ZNodeType.DEPENDENCY, name,
-								name, "rb", dependencyFile.lastModified()));
+								name, "rb", dependencyFile));
 					}
 				}
 			}

@@ -55,13 +55,14 @@ public class ZNode {
 	}
 
 	public ZNode(ZNodeType zNodeType, String name, String code,
-			String extension, long lastModified) {
+			String extension, File parentFile) {
 		this();
 		this.zNodeType = zNodeType;
 		this.name = name;
 		setCode(code);
 		this.extension = extension;
-		this.lastModified = lastModified;
+		this.lastModified = parentFile.lastModified();
+		this.parentFile = parentFile;
 	}
 
 	/**

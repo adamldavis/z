@@ -33,7 +33,6 @@ import com.adamldavis.swing.Display2d;
 import com.adamldavis.z.SmoothAnimator.AnimationType;
 import com.adamldavis.z.ZNode.ZNodeType;
 import com.adamldavis.z.api.APIFactory;
-import com.adamldavis.z.java.JavaFactory;
 
 /**
  * Main Window and Main class of Z program.
@@ -70,7 +69,7 @@ public class Z extends Display2d {
 		new Z();
 	}
 
-	final APIFactory apiFactory = new JavaFactory();
+	APIFactory apiFactory;
 
 	/* Mouse points on screen. */
 	Point point1, point2;
@@ -101,6 +100,8 @@ public class Z extends Display2d {
 	public Z() {
 		super(false, 2, 33);
 		setTitle("Z");
+		zfactory = new ZFactory(Thread.currentThread().getContextClassLoader()
+				.getResourceAsStream("./z.properties"));
 		loadSettings();
 
 		this.addMouseWheelListener(new MouseWheelListener() {
@@ -222,8 +223,8 @@ public class Z extends Display2d {
 			order = SortOrder.valueOf(settings.getProperty(UserSettings.ORDER));
 		}
 		if (settings.getProperty(UserSettings.LAST_LOCATION) != null) {
-			selectedNode = new ZCodeLoader(apiFactory).load(settings
-					.getFile(UserSettings.LAST_LOCATION));
+			final File file = settings.getFile(UserSettings.LAST_LOCATION);
+			selectedNode = load(file);
 			clicked(selectedNode);
 		}
 	}
@@ -305,6 +306,8 @@ public class Z extends Display2d {
 	final List<ZNode> zNodes = new ArrayList<ZNode>();
 
 	float size = 80;
+
+	public ZFactory zfactory;
 
 	@Override
 	protected void paintBuffered(Graphics2D g2d) {
@@ -402,6 +405,12 @@ public class Z extends Display2d {
 		}
 		new ZCodeSaver(apiFactory).save(zNode);
 		return zNode;
+	}
+
+	public ZNode load(File file) {
+		apiFactory = zfactory.getApiFactory(file);
+		log.info("api=" + apiFactory);
+		return new ZCodeLoader(apiFactory).load(file);
 	}
 
 }

@@ -88,6 +88,7 @@ public class RubyParser implements LanguageParser {
 	private static class ParserData {
 		int n = 0; // line #
 		int methodDepth = -1;
+		int methodStartLine = -1;
 		int currentDepth = 0;
 		File file = null;
 		String methodName = null;
@@ -129,13 +130,14 @@ public class RubyParser implements LanguageParser {
 			if (data.methodDepth == data.currentDepth) {
 				data.methodDepth = -1;
 				if (methods != null) {
-					methods.add(new ZNode(ZNodeType.DEPENDENCY,
-							data.methodName, data.code.toString(), "",
-							data.file.lastModified()));
+					methods.add(new ZNode(ZNodeType.METHOD, data.methodName,
+							data.code.toString(), data.methodStartLine + "-"
+									+ data.n, data.file));
 				}
 			}
 		} else if (line.trim().startsWith("def ")) {
 			data.methodDepth = data.currentDepth;
+			data.methodStartLine = data.n;
 			data.currentDepth++;
 
 			if (methods != null) {
@@ -184,7 +186,7 @@ public class RubyParser implements LanguageParser {
 
 					if (znode == null) {
 						final ZNode node = new ZNode(ZNodeType.DEPENDENCY, key,
-								pack, "" + n, file.lastModified());
+								pack, "" + n, file);
 						requires.add(node);
 						map.put(key, node);
 					} else {
