@@ -76,7 +76,6 @@ public class ZNode {
 	 *            Color to draw in.
 	 */
 	public void draw(Graphics2D g2d, float size, Color color) {
-		drawLines(g2d);
 		final int x = (int) (location.x - size * 0.5);
 		final int y = (int) (location.y - size * 0.5);
 		final int isize = (int) size;

@@ -333,6 +333,7 @@ public class Z extends Display2d {
 			}
 			if (node == selectedNode) {
 				updateCount();
+				node.drawLines(g2d);
 				node.draw(g2d, size + (count.get() / 10) * 2, Color.YELLOW);
 			} else {
 				node.draw(g2d, size, Color.WHITE);
