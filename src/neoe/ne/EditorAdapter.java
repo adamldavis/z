@@ -61,11 +61,17 @@ public class EditorAdapter implements Editor {
 		switch (mode) {
 		case BLUE:
 			ui.applyColorMode(2);
+			break;
 		case BLACK:
 			ui.applyColorMode(1);
+			break;
 		default:
 			ui.applyColorMode(0);
 		}
+	}
+
+	public void setShowNumbers(boolean show) {
+		editor.page.ui.showLineNumbers = show;
 	}
 
 	/*
@@ -103,6 +109,11 @@ public class EditorAdapter implements Editor {
 			editor.revalidate();
 			editor.repaint();
 		}
+	}
+
+	@Override
+	public void setScale(float scale) {
+		editor.rescale(scale);
 	}
 
 }

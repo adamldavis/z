@@ -32,6 +32,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.adamldavis.swing.Swutil;
+import com.adamldavis.z.SmoothAnimator.AnimationType;
 import com.adamldavis.z.ZNode.ZNodeType;
 import com.adamldavis.z.api.APIFactory;
 import com.adamldavis.z.api.Editor;
@@ -40,17 +41,16 @@ import com.adamldavis.z.gui.swing.ZDisplay;
 import com.adamldavis.z.gui.swing.ZMenu;
 
 /**
- * Main Window and Main class of Z program.
+ * Main class of Z program.
  * 
  * @author Adam Davis
  * 
  */
-@SuppressWarnings("serial")
 public class Z {
 
 	/** what's happening right now. */
 	public enum State {
-		NORMAL, SELECTING, ANIMATING
+		NORMAL, SELECTING, ANIMATING, EDITING
 	};
 
 	/** organization of nodes. */
@@ -114,15 +114,14 @@ public class Z {
 
 			@Override
 			public void mouseWheelMoved(MouseWheelEvent e) {
-				log.debug("zoom:" + e.getWheelRotation());
-				if (selectedNode != null) {
+				if (selectedNode != null && e.isControlDown()) {
+					log.debug("zoom:" + e.getWheelRotation());
 					if (e.getWheelRotation() > 0 && scale > 0.125f) {
 						scale /= 2f;
 					} else if (e.getWheelRotation() < 0 && scale < 32) {
 						scale *= 2f;
 					}
 					log.debug("Scale:" + scale);
-					// clicked(selectedNode);
 				}
 			}
 		});
@@ -147,7 +146,7 @@ public class Z {
 				if (z != null) {
 					if (e.getButton() == MouseEvent.BUTTON1) {
 						draggedNode = z;
-					} else {
+					} else if (e.isControlDown()) {
 						// new code editor
 						showNewEditor(z);
 					}
@@ -329,11 +328,32 @@ public class Z {
 	public void run() {
 		if (state == State.ANIMATING && aniCount.incrementAndGet() > 100) {
 			state = State.NORMAL;
+			if (editors.size() > 0) {
+				state = State.EDITING;
+			}
 		}
 		count.incrementAndGet();
 		if (count.get() >= 20) {
 			count.set(0);
 		}
+		final float time = aniCount.get() / 100f;
+
+		if (getState() == State.ANIMATING && getEditors().size() == 1) {
+			Editor ed = getEditors().get(0);
+			ed.setScale(0.25f + 0.75f * time);
+			final Point2D point = animator.animate(getSelectedNode().location,
+					new Point2D.Float(0, 0), time, AnimationType.COSINE);
+			ed.getEditorPanel().setLocation((int) point.getX(),
+					(int) point.getY());
+			return;
+		}
+		if (getState() == State.ANIMATING)
+			for (ZNode node : zNodes) {
+				if (pointMap.containsKey(node)) {
+					node.location.setLocation(animator.animate(node.location,
+							pointMap.get(node), time, AnimationType.COSINE));
+				}
+			}
 	}
 
 	ZNode findZNodeAt(Point p) {
@@ -503,9 +523,6 @@ public class Z {
 
 	public void showNewEditor(final ZNode z) {
 		final ZCodeEditor editor = new ZCodeEditor(z, apiFactory);
-		int h = Math.min(z.getCodeLineSize() * 16 + 32, display.getHeight());
-		editor.getEditorPanel().setSize(
-				new Dimension(display.getWidth() / 2, h));
 		editor.getEditorPanel().addKeyListener(new KeyListener() {
 
 			@Override
@@ -534,6 +551,9 @@ public class Z {
 				if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
 					display.getContentPane().remove(editor.getEditorPanel());
 					editors.remove(editor);
+					state = State.ANIMATING;
+					scale = 1f;
+					clicked(z);
 				} else if (e.getKeyCode() == KeyEvent.VK_F1) {
 					try {
 						display.showEditorHelp();
@@ -544,8 +564,13 @@ public class Z {
 			}
 		});
 		editors.add(0, editor);
+		final int size = (int) z.getSize();
+		editor.getEditorPanel().setSize(new Dimension(size, size));
 		display.getContentPane().add(editor.getEditorPanel());
-		display.doLayout();
+		editor.getEditorPanel().setLocation((int) z.location.x - size / 2,
+				(int) z.location.y - size / 2);
+		editor.setScale(0.25f);
+		state = State.ANIMATING;
 	}
 
 }

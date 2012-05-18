@@ -21,4 +21,7 @@ public interface Editor {
 	/** Set the current text in the editor. */
 	void setText(String s);
 
+	/** sets the scale of the editor. */
+	void setScale(float scale);
+
 }

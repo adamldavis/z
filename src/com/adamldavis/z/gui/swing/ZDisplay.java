@@ -22,7 +22,6 @@ import org.slf4j.LoggerFactory;
 import com.adamldavis.swing.Display2d;
 import com.adamldavis.swing.Swutil;
 import com.adamldavis.z.SmoothAnimator;
-import com.adamldavis.z.SmoothAnimator.AnimationType;
 import com.adamldavis.z.Z;
 import com.adamldavis.z.Z.State;
 import com.adamldavis.z.ZNode;
@@ -65,22 +64,15 @@ public class ZDisplay extends Display2d {
 		g2d.setBackground(Color.BLACK);
 		g2d.setColor(g2d.getBackground());
 		// g2d.fillRect(0, 0, width, height);
-		if (zNodes == null) {
+		if (zNodes == null || z.getState() == State.EDITING) {
 			return;
 		}
-		final float time = aniCount.get() / 100f;
 		final ZNodePainter nodePainter = new ZNodePainter(g2d, z.getScale(),
 				Color.WHITE);
 		final ZNodePainter selNodePainter = new ZNodePainterWithLines(g2d,
 				z.getScale(), Color.YELLOW);
 
 		for (ZNode node : zNodes) {
-			if (z.getState() == State.ANIMATING) {
-				if (pointMap.containsKey(node)) {
-					node.location.setLocation(animator.animate(node.location,
-							pointMap.get(node), time, AnimationType.COSINE));
-				}
-			}
 			if (node == z.getSelectedNode()) {
 				selNodePainter.paint(node);
 			} else {

@@ -64,9 +64,9 @@ public class BetterEditPanel extends EditPanel {
 	/** Sets the scale for this editor, then tells parent to doLayout. */
 	public void rescale(final float scale) {
 		page.ui.scalev = scale;
-		setPreferredSize(new Dimension(Math.round(width * scale),
-				Math.round(height * scale)));
-		getParent().doLayout();
+		setSize(new Dimension(Math.round(width * scale), Math.round(height
+				* scale)));
+		// getParent().doLayout();
 	}
 
 }
