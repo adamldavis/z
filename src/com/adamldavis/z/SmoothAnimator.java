@@ -5,7 +5,7 @@ import java.awt.geom.Point2D;
 /** Determines the path along a line for a smooth animation. */
 public class SmoothAnimator {
 
-	enum AnimationType {
+	public enum AnimationType {
 		EXP, COSINE, LINEAR
 	};
 

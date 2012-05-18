@@ -2,10 +2,13 @@
 package com.adamldavis.z;
 
 import java.awt.Dimension;
+import java.awt.Point;
 import java.awt.geom.Point2D;
 import java.util.Map;
 
 /**
+ * Converts positions to pixels using given center and dimensions.
+ * 
  * @author Adam Davis
  * 
  */
@@ -15,10 +18,19 @@ public class PixelZNodePositioner implements ZNodePositioner {
 
 	final Dimension dimension;
 
-	public PixelZNodePositioner(Dimension dimension, ZNodePositioner positioner) {
+	final Point center;
+
+	public PixelZNodePositioner(Point center, Dimension dimension,
+			ZNodePositioner positioner) {
 		super();
 		this.positioner = positioner;
 		this.dimension = dimension;
+		this.center = center;
+	}
+
+	public PixelZNodePositioner(Dimension dimension, ZNodePositioner positioner) {
+		this(new Point(dimension.width / 2, dimension.height / 2), dimension,
+				positioner);
 	}
 
 	/*
@@ -36,7 +48,8 @@ public class PixelZNodePositioner implements ZNodePositioner {
 			double halfH = dimension.height * 0.5;
 			double halfW = dimension.width * 0.5;
 
-			p.setLocation(halfW * (1 + p.getX()), halfH * (1 + p.getY()));
+			p.setLocation(center.x + halfW * p.getX(),
+					center.y + halfH * p.getY());
 		}
 
 		return map;

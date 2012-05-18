@@ -1,4 +1,4 @@
-package com.adamldavis.z;
+package com.adamldavis.z.gui.swing;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -17,9 +17,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.adamldavis.swing.Swutil;
+import com.adamldavis.z.UserSettings;
+import com.adamldavis.z.Z;
 import com.adamldavis.z.Z.Direction;
 import com.adamldavis.z.Z.NodeLayout;
 import com.adamldavis.z.Z.SortOrder;
+import com.adamldavis.z.ZCodeSaver;
 
 @SuppressWarnings("serial")
 public class ZMenu extends JFrame {
@@ -57,7 +60,7 @@ public class ZMenu extends JFrame {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				JOptionPane.showMessageDialog(z, ABOUT_MSG);
+				JOptionPane.showMessageDialog(z.getDisplay(), ABOUT_MSG);
 				listener.actionPerformed(e);
 			}
 		});
@@ -65,7 +68,7 @@ public class ZMenu extends JFrame {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				showHelp(z);
+				showHelp(z.getDisplay());
 				listener.actionPerformed(e);
 			}
 		});
@@ -78,28 +81,28 @@ public class ZMenu extends JFrame {
 		direction.add("Left-to-Right").addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				z.direction = Direction.LR;
+				z.setDirection(Direction.LR);
 				actionListener.actionPerformed(e);
 			}
 		});
 		direction.add("Right-to-Left").addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				z.direction = Direction.RL;
+				z.setDirection(Direction.RL);
 				actionListener.actionPerformed(e);
 			}
 		});
 		direction.add("Down").addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				z.direction = Direction.DOWN;
+				z.setDirection(Direction.DOWN);
 				actionListener.actionPerformed(e);
 			}
 		});
 		direction.add("Up").addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				z.direction = Direction.UP;
+				z.setDirection(Direction.UP);
 				actionListener.actionPerformed(e);
 			}
 		});
@@ -111,21 +114,21 @@ public class ZMenu extends JFrame {
 		layout.add("Bloom").addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				z.nodeLayout = NodeLayout.BLOOM;
+				z.setNodeLayout(NodeLayout.BLOOM);
 				actionListener.actionPerformed(e);
 			}
 		});
 		layout.add("Grid").addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				z.nodeLayout = NodeLayout.GRID;
+				z.setNodeLayout(NodeLayout.GRID);
 				actionListener.actionPerformed(e);
 			}
 		});
 		layout.add("Random").addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				z.nodeLayout = NodeLayout.RANDOM;
+				z.setNodeLayout(NodeLayout.RANDOM);
 				actionListener.actionPerformed(e);
 			}
 		});
@@ -137,28 +140,28 @@ public class ZMenu extends JFrame {
 		sorting.add("Default").addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				z.order = SortOrder.DEFAULT;
+				z.setOrder(SortOrder.DEFAULT);
 				actionListener.actionPerformed(e);
 			}
 		});
 		sorting.add("Alphabetical").addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				z.order = SortOrder.ALPHA;
+				z.setOrder(SortOrder.ALPHA);
 				actionListener.actionPerformed(e);
 			}
 		});
 		sorting.add("Time").addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				z.order = SortOrder.TIME;
+				z.setOrder(SortOrder.TIME);
 				actionListener.actionPerformed(e);
 			}
 		});
 		sorting.add("Size").addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				z.order = SortOrder.SIZE;
+				z.setOrder(SortOrder.SIZE);
 				actionListener.actionPerformed(e);
 			}
 		});
@@ -175,12 +178,12 @@ public class ZMenu extends JFrame {
 				chooser.setDialogTitle("Open file or project folder");
 				chooser.setMultiSelectionEnabled(false);
 				chooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
-				chooser.showOpenDialog(z);
+				chooser.showOpenDialog(z.getDisplay());
 
 				File file = chooser.getSelectedFile();
 				if (file != null) {
-					z.selectedNode = z.load(file);
-					z.settings.setProperty(UserSettings.LAST_LOCATION,
+					z.load(file);
+					z.getSettings().setProperty(UserSettings.LAST_LOCATION,
 							file.getAbsolutePath());
 				}
 				actionListener.actionPerformed(e);
@@ -189,7 +192,7 @@ public class ZMenu extends JFrame {
 		fileMenu.add("Save").addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				new ZCodeSaver(z.apiFactory).save(z.selectedNode);
+				new ZCodeSaver(z.getApiFactory()).save(z.getSelectedNode());
 				actionListener.actionPerformed(e);
 			}
 		});
@@ -211,9 +214,7 @@ public class ZMenu extends JFrame {
 
 	public void showHelp(JFrame frame) {
 		try {
-			Swutil.showStaticPage(
-					Thread.currentThread().getContextClassLoader()
-							.getResource("./help.html").toURI(),
+			Swutil.showStaticPage(Z.class.getResource("help.html").toURI(),
 					frame.getSize(), frame.getLocation());
 		} catch (URISyntaxException e) {
 			log.error(e.getMessage());

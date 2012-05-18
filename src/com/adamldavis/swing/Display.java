@@ -79,12 +79,12 @@ public abstract class Display extends JFrame {
 		}
 		final Graphics2D g2 = (Graphics2D) this.getBufferStrategy()
 				.getDrawGraphics();
+		super.paint(g2);
 		paintBuffered(g2);
 		g2.dispose();
 		getBufferStrategy().show();
 	}
 
 	protected abstract void paintBuffered(Graphics2D g2);
-
 
 }

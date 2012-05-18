@@ -1,13 +1,12 @@
 /** Copyright 2012, Adam L. Davis. */
 package com.adamldavis.z;
 
-import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.Graphics2D;
 import java.awt.Point;
-import java.awt.RenderingHints;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
@@ -15,24 +14,30 @@ import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
 import java.awt.geom.Point2D;
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.adamldavis.swing.Display2d;
-import com.adamldavis.z.SmoothAnimator.AnimationType;
+import com.adamldavis.swing.Swutil;
 import com.adamldavis.z.ZNode.ZNodeType;
 import com.adamldavis.z.api.APIFactory;
+import com.adamldavis.z.api.Editor;
+import com.adamldavis.z.editor.ZCodeEditor;
+import com.adamldavis.z.gui.swing.ZDisplay;
+import com.adamldavis.z.gui.swing.ZMenu;
 
 /**
  * Main Window and Main class of Z program.
@@ -41,25 +46,25 @@ import com.adamldavis.z.api.APIFactory;
  * 
  */
 @SuppressWarnings("serial")
-public class Z extends Display2d {
+public class Z {
 
 	/** what's happening right now. */
-	enum State {
+	public enum State {
 		NORMAL, SELECTING, ANIMATING
 	};
 
 	/** organization of nodes. */
-	enum NodeLayout {
+	public enum NodeLayout {
 		BLOOM, RANDOM, GRID
 	}
 
 	/** How to order nodes. */
-	enum SortOrder {
+	public enum SortOrder {
 		DEFAULT, ALPHA, TIME, SIZE
 	}
 
 	/** Direction from "dependencies" to "sub-modules". */
-	enum Direction {
+	public enum Direction {
 		LR, RL, UP, DOWN
 	}
 
@@ -80,6 +85,10 @@ public class Z extends Display2d {
 
 	Direction direction = Direction.LR;
 
+	ZNode draggedNode;
+
+	final List<Editor> editors = new LinkedList<Editor>();
+
 	SortOrder order = SortOrder.DEFAULT;
 
 	UserSettings settings = new UserSettings();
@@ -88,7 +97,6 @@ public class Z extends Display2d {
 
 		@Override
 		public void actionPerformed(ActionEvent e) {
-			timer.start();
 			if (selectedNode != null) {
 				clicked(selectedNode);
 			}
@@ -97,30 +105,28 @@ public class Z extends Display2d {
 		}
 	});
 
-	public Z() {
-		super(false, 2, 33);
-		setTitle("Z");
-		zfactory = new ZFactory(Thread.currentThread().getContextClassLoader()
-				.getResourceAsStream("./z.properties"));
-		loadSettings();
+	ZDisplay display = new ZDisplay(this);
 
-		this.addMouseWheelListener(new MouseWheelListener() {
+	Timer timer = new Timer("Z timer", true);
+
+	public Z() {
+		display.addMouseWheelListener(new MouseWheelListener() {
 
 			@Override
 			public void mouseWheelMoved(MouseWheelEvent e) {
 				log.debug("zoom:" + e.getWheelRotation());
 				if (selectedNode != null) {
-					if (e.getWheelRotation() > 0 && size > 5f) {
-						size /= 2f;
-					} else if (e.getWheelRotation() < 0 && size < width) {
-						size *= 2f;
+					if (e.getWheelRotation() > 0 && scale > 0.125f) {
+						scale /= 2f;
+					} else if (e.getWheelRotation() < 0 && scale < 32) {
+						scale *= 2f;
 					}
-					log.debug("Size:" + size);
-					clicked(selectedNode);
+					log.debug("Scale:" + scale);
+					// clicked(selectedNode);
 				}
 			}
 		});
-		this.addMouseMotionListener(new MouseMotionAdapter() {
+		display.addMouseMotionListener(new MouseMotionAdapter() {
 
 			@Override
 			public void mouseDragged(MouseEvent e) {
@@ -129,7 +135,7 @@ public class Z extends Display2d {
 				}
 			}
 		});
-		this.addMouseListener(new MouseAdapter() {
+		display.addMouseListener(new MouseAdapter() {
 
 			@Override
 			public void mousePressed(MouseEvent e) {
@@ -140,14 +146,10 @@ public class Z extends Display2d {
 				ZNode z = findZNodeAt(e.getPoint());
 				if (z != null) {
 					if (e.getButton() == MouseEvent.BUTTON1) {
-						clicked(z);
+						draggedNode = z;
 					} else {
 						// new code editor
-						ZCodeEditor editor = new ZCodeEditor(z, apiFactory);
-						editor.setSize(width / 2, height / 2);
-						Point point = Z.this.getLocationOnScreen();
-						editor.setLocation(point.x + width / 4, point.y
-								+ height / 4);
+						showNewEditor(z);
 					}
 				}
 			}
@@ -156,11 +158,16 @@ public class Z extends Display2d {
 			public void mouseReleased(MouseEvent e) {
 				log.info("released: " + e);
 				if (point1 != null && point2 != null) {
-					ZNode z = findZNodeAt(e.getPoint());
-					if (z == null) {
-						createSubNode(e);
+					if (draggedNode == null) {
+						ZNode z = findZNodeAt(e.getPoint());
+						if (z == null) {
+							createSubNode(e.getPoint());
+						} else
+							dragged(z);
 					} else {
-						dragged(z);
+						draggedNode.location
+								.setLocation(translateToZNodePoint(point2));
+						draggedNode = null;
 					}
 					point1 = point2 = null;
 				}
@@ -182,13 +189,23 @@ public class Z extends Display2d {
 						if (dep != null)
 							selectedNode.dependencies.add(dep);
 					}
+				} else if (e.getButton() == MouseEvent.BUTTON1) {
+					clicked(z);
 				}
 			}
 		});
+		zfactory = new ZFactory(Z.class.getResourceAsStream("z.properties"));
+		loadSettings();
+		timer.schedule(new TimerTask() {
+
+			@Override
+			public void run() {
+				Z.this.run();
+			}
+		}, 33, 33);
 	}
 
 	protected void activateMenu(MouseEvent e) {
-		timer.stop();
 		zMenu.setLocation(e.getLocationOnScreen());
 		SwingUtilities.invokeLater(new Runnable() {
 
@@ -224,8 +241,7 @@ public class Z extends Display2d {
 		}
 		if (settings.getProperty(UserSettings.LAST_LOCATION) != null) {
 			final File file = settings.getFile(UserSettings.LAST_LOCATION);
-			selectedNode = load(file);
-			clicked(selectedNode);
+			clicked(load(file));
 		}
 	}
 
@@ -239,7 +255,8 @@ public class Z extends Display2d {
 	protected void dragged(ZNode z) {
 		log.info("dragged: " + z);
 		// create dependency on z?
-		selectedNode.dependencies.add(z);
+		if (z.zNodeType == ZNodeType.DEPENDENCY)
+			selectedNode.dependencies.add(z);
 	}
 
 	AtomicInteger count = new AtomicInteger(0);
@@ -261,7 +278,7 @@ public class Z extends Display2d {
 
 		state = State.ANIMATING;
 		aniCount.set(0);
-		nodePositioner = new PixelZNodePositioner(new Dimension(width, height),
+		nodePositioner = new PixelZNodePositioner(display.getDimension(),
 				new DirectionZNodePositioner(direction, makeNodePositioner()));
 		sortNodes();
 		pointMap.putAll(nodePositioner.getNewPositions(selectedNode));
@@ -305,46 +322,14 @@ public class Z extends Display2d {
 
 	final List<ZNode> zNodes = new ArrayList<ZNode>();
 
-	float size = 80;
+	float scale = 1.0f;
 
 	public ZFactory zfactory;
 
-	@Override
-	protected void paintBuffered(Graphics2D g2d) {
+	public void run() {
 		if (state == State.ANIMATING && aniCount.incrementAndGet() > 100) {
 			state = State.NORMAL;
 		}
-		g2d.addRenderingHints(new RenderingHints(
-				RenderingHints.KEY_ANTIALIASING,
-				RenderingHints.VALUE_ANTIALIAS_ON));
-		g2d.setBackground(Color.BLACK);
-		g2d.setColor(g2d.getBackground());
-		g2d.fillRect(0, 0, width, height);
-		if (zNodes == null) {
-			return;
-		}
-		final float time = aniCount.get() / 100f;
-		for (ZNode node : zNodes) {
-			if (state == State.ANIMATING) {
-				if (pointMap.containsKey(node)) {
-					node.location.setLocation(animator.animate(node.location,
-							pointMap.get(node), time, AnimationType.COSINE));
-				}
-			}
-			if (node == selectedNode) {
-				updateCount();
-				node.drawLines(g2d);
-				node.draw(g2d, size + (count.get() / 10) * 2, Color.YELLOW);
-			} else {
-				node.draw(g2d, size, Color.WHITE);
-			}
-		}
-		if (point1 != null && point2 != null) {
-			drawLine(g2d, point1.x, point1.y, point2.x, point2.y);
-		}
-	}
-
-	private void updateCount() {
 		count.incrementAndGet();
 		if (count.get() >= 20) {
 			count.set(0);
@@ -355,14 +340,15 @@ public class Z extends Display2d {
 		ZNode found = null;
 
 		for (ZNode z : zNodes) {
-			if (z.location.distance(p.x, p.y) < size * 0.5) {
+			final double hs = z.getSize() * scale * 0.5;
+			if (translateToDisplayPoint(z.location).distance(p.x, p.y) < hs) {
 				found = z;
 			}
 		}
 		return found;
 	}
 
-	protected void createSubNode(MouseEvent e) {
+	public void createSubNode(Point point) {
 		if (selectedNode != null && selectedNode.zNodeType != ZNodeType.METHOD
 				&& selectedNode.zNodeType != ZNodeType.DEPENDENCY) {
 			// create sub-module
@@ -377,19 +363,20 @@ public class Z extends Display2d {
 			default:
 				subtype = ZNodeType.PACKAGE;
 			}
-			ZNode sub = createNewZ(e.getPoint(), subtype);
+			ZNode sub = createNewZ(point, subtype);
 			if (sub != null)
 				selectedNode.submodules.add(sub);
 		}
 	}
 
-	ZNode createNewZ(Point p, ZNodeType type) {
-		final String name = JOptionPane.showInputDialog(this, "Name for new "
-				+ type.name(), "Z");
+	ZNode createNewZ(Point point, ZNodeType type) {
+		final String name = display.showInputDialog(
+				"Name for new " + type.name(), "Z");
 		if (name == null) {
 			return null;
 		}
-		final ZNode zNode = new ZNode(p.x, p.y, name.trim());
+		final Point2D.Float zp = translateToZNodePoint(point);
+		final ZNode zNode = new ZNode(zp.x, zp.y, name.trim());
 		zNode.zNodeType = type;
 		zNode.parentFile = selectedNode.parentFile;
 		zNodes.add(zNode);
@@ -411,7 +398,154 @@ public class Z extends Display2d {
 	public ZNode load(File file) {
 		apiFactory = zfactory.getApiFactory(file);
 		log.info("api=" + apiFactory);
-		return new ZCodeLoader(apiFactory).load(file);
+		final ZNode node = new ZCodeLoader(apiFactory).load(file);
+		selectedNode = node;
+		return node;
+	}
+
+	/** Translates from location as stored for ZNodes to GUI point. */
+	public Point2D.Float translateToDisplayPoint(Point2D.Float point) {
+		return new Point2D.Float(point.x * scale, point.y * scale);
+	}
+
+	/** Translates from GUI point to location as stored for ZNodes. */
+	public Point2D.Float translateToZNodePoint(Point point) {
+		return new Point2D.Float(point.x / scale, point.y / scale);
+	}
+
+	public List<ZNode> getZNodes() {
+		return this.zNodes;
+	}
+
+	public APIFactory getApiFactory() {
+		return apiFactory;
+	}
+
+	public Point getPoint1() {
+		return point1;
+	}
+
+	public Point getPoint2() {
+		return point2;
+	}
+
+	public State getState() {
+		return state;
+	}
+
+	public NodeLayout getNodeLayout() {
+		return nodeLayout;
+	}
+
+	public Direction getDirection() {
+		return direction;
+	}
+
+	public ZNode getDraggedNode() {
+		return draggedNode;
+	}
+
+	public List<Editor> getEditors() {
+		return editors;
+	}
+
+	public SortOrder getOrder() {
+		return order;
+	}
+
+	public UserSettings getSettings() {
+		return settings;
+	}
+
+	public ZDisplay getDisplay() {
+		return display;
+	}
+
+	public AtomicInteger getCount() {
+		return count;
+	}
+
+	public AtomicInteger getAniCount() {
+		return aniCount;
+	}
+
+	public Map<ZNode, Point2D> getPointMap() {
+		return pointMap;
+	}
+
+	public ZNodePositioner getNodePositioner() {
+		return nodePositioner;
+	}
+
+	public SmoothAnimator getAnimator() {
+		return animator;
+	}
+
+	public ZNode getSelectedNode() {
+		return selectedNode;
+	}
+
+	public float getScale() {
+		return scale;
+	}
+
+	public void setNodeLayout(NodeLayout nodeLayout) {
+		this.nodeLayout = nodeLayout;
+	}
+
+	public void setDirection(Direction direction) {
+		this.direction = direction;
+	}
+
+	public void setOrder(SortOrder order) {
+		this.order = order;
+	}
+
+	public void showNewEditor(final ZNode z) {
+		final ZCodeEditor editor = new ZCodeEditor(z, apiFactory);
+		int h = Math.min(z.getCodeLineSize() * 16 + 32, display.getHeight());
+		editor.getEditorPanel().setSize(
+				new Dimension(display.getWidth() / 2, h));
+		editor.getEditorPanel().addKeyListener(new KeyListener() {
+
+			@Override
+			public void keyTyped(KeyEvent e) {
+				if (e.getKeyChar() == '\n') {
+					SwingUtilities.invokeLater(new Runnable() {
+						@Override
+						public void run() {
+							try {
+								Thread.sleep(100); // 1/10 second
+							} catch (InterruptedException e) {
+							}
+							editor.save();
+							Swutil.flashMessage(display, "Saved " + z.name);
+						}
+					});
+				}
+			}
+
+			@Override
+			public void keyReleased(KeyEvent e) {
+			}
+
+			@Override
+			public void keyPressed(KeyEvent e) {
+				if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
+					display.getContentPane().remove(editor.getEditorPanel());
+					editors.remove(editor);
+				} else if (e.getKeyCode() == KeyEvent.VK_F1) {
+					try {
+						display.showEditorHelp();
+					} catch (IOException e1) {
+						log.error(e1.getMessage());
+					}
+				}
+			}
+		});
+		editors.add(0, editor);
+		display.getContentPane().add(editor.getEditorPanel());
+		display.doLayout();
 	}
 
 }
