@@ -130,10 +130,12 @@ public class RubyParser implements LanguageParser {
 			if (data.methodDepth == data.currentDepth) {
 				data.methodDepth = -1;
 				if (methods != null) {
+					data.code.append(line).append('\n');
 					methods.add(new ZNode(ZNodeType.METHOD, data.methodName,
 							data.code.toString(), data.methodStartLine + "-"
 									+ data.n, data.file));
 				}
+				return;
 			}
 		} else if (line.trim().startsWith("def ")) {
 			data.methodDepth = data.currentDepth;
