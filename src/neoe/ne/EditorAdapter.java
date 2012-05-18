@@ -26,11 +26,11 @@ public class EditorAdapter implements Editor {
 	private static final Logger log = LoggerFactory
 			.getLogger(EditorAdapter.class);
 
-	EditPanel editor;
+	protected BetterEditPanel editor;
 
 	public EditorAdapter() {
 		try {
-			editor = new EditPanel("");
+			editor = new BetterEditPanel("");
 		} catch (Exception e) {
 			log.error(e.getMessage());
 		}
@@ -43,7 +43,7 @@ public class EditorAdapter implements Editor {
 	 */
 	@Override
 	public JPanel open(File f) throws Exception {
-		editor = new EditPanel(f);
+		editor = new BetterEditPanel(f);
 		editor.openWindow();
 		return editor;
 	}

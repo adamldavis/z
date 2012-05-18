@@ -5,7 +5,7 @@
     <groupId>com.adamldavis</groupId>
     <artifactId>z</artifactId>
     <name>z code</name>
-    <version>0.1-alpha-4</version>
+    <version>0.1-beta-1</version>
     <url>http://adamldavis.com</url>
     <organization>
         <name>Adam L. Davis</name>
@@ -13,10 +13,13 @@
     <build>
 	    <resources>
 	        <resource>
-	            <directory>src</directory>
+	            <directory>resources</directory>
 	            <includes>
-	                <include>*.png</include>
+	                <include>**/*.*</include>
 	            </includes>
+                <excludes>
+                    <exclude>*.java</exclude>
+                </excludes>
 	        </resource>
 	    </resources>
         <sourceDirectory>src</sourceDirectory>
@@ -28,6 +31,38 @@
                     <source>1.6</source>
                     <target>1.6</target>
                 </configuration>
+            </plugin>
+            <plugin>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>2.4</version>
+                <configuration>
+                    <archive>
+                        <index>true</index>
+                        <manifest>
+                            <addClasspath>true</addClasspath>
+                            <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+                            <mainClass>com.adamldavis.z.Z</mainClass>
+                        </manifest>
+                    </archive>
+                </configuration>
+            </plugin>
+            <plugin>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>2.3</version>
+                <configuration>
+                    <descriptors>
+                        <descriptor>zip.xml</descriptor>
+                    </descriptors>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>make-zip</id> <!-- this is used for inheritance merges -->
+                        <phase>package</phase> <!-- bind to the packaging phase -->
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
@@ -52,10 +87,10 @@
             <artifactId>slf4j-log4j12</artifactId>
             <version>1.6.4</version>
         </dependency>
-        <dependency>
-            <artifactId>neoe</artifactId>
-            <groupId>neoe</groupId>
-            <version>0.12.04-1</version>
-        </dependency>
+    	<dependency>
+    		<groupId>org.mozilla</groupId>
+    		<artifactId>rhino</artifactId>
+    		<version>1.7R3</version>
+    	</dependency>
     </dependencies>
 </project>
