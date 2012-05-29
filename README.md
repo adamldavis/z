@@ -1,7 +1,7 @@
 Z (zeta)
 ========================
 
-Go from a 10,000 view of the entire project down to any file simply by zooming.
+Go from a 10,000 ft view of the entire project down to any file simply by zooming.
 
 Languages/Frameworks Supported: Java/Maven, Ruby/Gems
 
