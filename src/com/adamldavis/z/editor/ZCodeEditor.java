@@ -21,9 +21,9 @@ public class ZCodeEditor extends EditorAdapter {
 
 	final JPanel panel;
 
-	private ZNode zNode;
+	protected ZNode zNode;
 
-	private final APIFactory apiFactory;
+	protected final APIFactory apiFactory;
 
 	public ZCodeEditor(ZNode zNode, APIFactory apiFactory) {
 		super();

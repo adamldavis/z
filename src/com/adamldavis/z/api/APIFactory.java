@@ -8,4 +8,8 @@ public interface APIFactory {
 
 	LanguageParser getLanguageParser();
 
+	Compiler getCompiler();
+
+	CodeRunner getCodeRunner();
+
 }

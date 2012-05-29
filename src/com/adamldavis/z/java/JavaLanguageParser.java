@@ -113,7 +113,13 @@ public class JavaLanguageParser implements LanguageParser {
 						if (inMethod) {
 							final ZNode method = methods
 									.get(methods.size() - 1);
-							method.replaceCode(code.append(line).toString());
+							int start = 0;
+
+							if (code.substring(0, 1).equals("\n")) {
+								start = 1;
+							}
+							method.replaceCode(code.append(line)
+									.substring(start).toString());
 							method.extension = methodStart + "-" + lineNumber;
 							inMethod = false;
 						}
@@ -207,7 +213,7 @@ public class JavaLanguageParser implements LanguageParser {
 		return findCommentLineEnd(code, i + 1);
 	}
 
-	private boolean isMethodSig(CharSequence code) {
+	protected boolean isMethodSig(CharSequence code) {
 		return isMethodSigFind(code, 0);
 	}
 

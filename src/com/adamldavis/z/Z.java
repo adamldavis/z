@@ -1,6 +1,7 @@
 /** Copyright 2012, Adam L. Davis. */
 package com.adamldavis.z;
 
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
@@ -37,6 +38,7 @@ import com.adamldavis.z.ZNode.ZNodeType;
 import com.adamldavis.z.api.APIFactory;
 import com.adamldavis.z.api.Editor;
 import com.adamldavis.z.editor.ZCodeEditor;
+import com.adamldavis.z.editor.ZCodeEditorPlus;
 import com.adamldavis.z.gui.swing.ZDisplay;
 import com.adamldavis.z.gui.swing.ZMenu;
 
@@ -109,12 +111,14 @@ public class Z {
 
 	Timer timer = new Timer("Z timer", true);
 
+	private ZNode hoveredNode;
+
 	public Z() {
 		display.addMouseWheelListener(new MouseWheelListener() {
 
 			@Override
 			public void mouseWheelMoved(MouseWheelEvent e) {
-				if (selectedNode != null && e.isControlDown()) {
+				if (e.isControlDown()) {
 					log.debug("zoom:" + e.getWheelRotation());
 					if (e.getWheelRotation() > 0 && scale > 0.125f) {
 						scale /= 2f;
@@ -122,6 +126,11 @@ public class Z {
 						scale *= 2f;
 					}
 					log.debug("Scale:" + scale);
+					if (!editors.isEmpty()) {
+						for (Editor editor : editors) {
+							editor.setScale(scale);
+						}
+					}
 				}
 			}
 		});
@@ -144,11 +153,11 @@ public class Z {
 				}
 				ZNode z = findZNodeAt(e.getPoint());
 				if (z != null) {
-					if (e.getButton() == MouseEvent.BUTTON1) {
-						draggedNode = z;
-					} else if (e.isControlDown()) {
+					if (e.isControlDown()) {
 						// new code editor
 						showNewEditor(z);
+					} else if (e.getButton() == MouseEvent.BUTTON1) {
+						draggedNode = z;
 					}
 				}
 			}
@@ -188,9 +197,27 @@ public class Z {
 						if (dep != null)
 							selectedNode.dependencies.add(dep);
 					}
-				} else if (e.getButton() == MouseEvent.BUTTON1) {
+				} else if (e.getButton() == MouseEvent.BUTTON1
+						&& !e.isControlDown()) {
 					clicked(z);
 				}
+			}
+		});
+		display.addMouseMotionListener(new MouseMotionAdapter() {
+			@Override
+			public void mouseMoved(MouseEvent e) {
+				final ZNode node = findZNodeAt(e.getPoint());
+				if (node == selectedNode) {
+					return;
+				}
+				if (hoveredNode != node && hoveredNode != null) {
+					hoveredNode.setSize(hoveredNode.getSize() * 2 / 3);
+				}
+				if (node != null && hoveredNode != node) {
+					node.setSize(node.getSize() * 3 / 2);
+				}
+				hoveredNode = node;
+
 			}
 		});
 		zfactory = new ZFactory(Z.class.getResourceAsStream("z.properties"));
@@ -264,6 +291,8 @@ public class Z {
 
 	final Map<ZNode, Point2D> pointMap = new HashMap<ZNode, Point2D>();
 
+	final Map<ZNode, Float> sizeMap = new HashMap<ZNode, Float>();
+
 	ZNodePositioner nodePositioner;
 
 	protected void clicked(ZNode node) {
@@ -277,10 +306,39 @@ public class Z {
 
 		state = State.ANIMATING;
 		aniCount.set(0);
-		nodePositioner = new PixelZNodePositioner(display.getDimension(),
+		final Dimension dim = display.getDimension();
+		nodePositioner = new PixelZNodePositioner(dim,
 				new DirectionZNodePositioner(direction, makeNodePositioner()));
 		sortNodes();
 		pointMap.putAll(nodePositioner.getNewPositions(selectedNode));
+		sizeMap.put(selectedNode,
+				(float) Math.min(dim.getWidth(), dim.getHeight()) / 2);
+		Map<ZNode, Point2D> depMap = new HashMap<ZNode, Point2D>();
+
+		for (ZNode dep : selectedNode.dependencies) {
+			depMap.put(dep, pointMap.get(dep));
+		}
+		for (ZNode sub : selectedNode.submodules) {
+			Point2D loc = pointMap.get(sub);
+			final Point center = new Point((int) Math.round(loc.getX()),
+					(int) Math.round(loc.getY()));
+			sub = new ZCodeLoader(apiFactory).load(sub);
+			float size = (float) (dim.getHeight() * 0.10416666666666);
+			sizeMap.put(sub, size + logSize(sub.submodules.size()));
+			zNodes.addAll(sub.submodules);
+			for (ZNode sub2 : sub.submodules) {
+				sizeMap.put(sub2, size / 8f + logSize(sub2.getCodeLineSize()));
+			}
+			pointMap.putAll(new PixelZNodePositioner(center, new Dimension(
+					dim.width / 10, dim.height / 10),
+					new DirectionZNodePositioner(direction,
+							makeNodePositioner())).getNewPositions(sub));
+		}
+		pointMap.putAll(depMap);
+	}
+
+	public static float logSize(int size) {
+		return (float) (size > 2 ? Math.log(size) : 0);
 	}
 
 	private void sortNodes() {
@@ -326,7 +384,7 @@ public class Z {
 	public ZFactory zfactory;
 
 	public void run() {
-		if (state == State.ANIMATING && aniCount.incrementAndGet() > 100) {
+		if (state == State.ANIMATING && aniCount.incrementAndGet() >= 100) {
 			state = State.NORMAL;
 			if (editors.size() > 0) {
 				state = State.EDITING;
@@ -352,6 +410,14 @@ public class Z {
 				if (pointMap.containsKey(node)) {
 					node.location.setLocation(animator.animate(node.location,
 							pointMap.get(node), time, AnimationType.COSINE));
+				}
+				if (sizeMap.containsKey(node)) {
+					final Float size = sizeMap.get(node);
+					final Float currentSize = node.getSize();
+					node.setSize((float) animator.animate(
+							new Point2D.Float(currentSize, 0),
+							new Point2D.Float(size, 0), time,
+							AnimationType.COSINE).getX());
 				}
 			}
 	}
@@ -522,8 +588,9 @@ public class Z {
 	}
 
 	public void showNewEditor(final ZNode z) {
-		final ZCodeEditor editor = new ZCodeEditor(z, apiFactory);
-		editor.getEditorPanel().addKeyListener(new KeyListener() {
+		final ZCodeEditor editor = z.zNodeType == ZNodeType.METHOD ? new ZCodeEditorPlus(
+				z, apiFactory) : new ZCodeEditor(z, apiFactory);
+		final KeyListener keyAdapter = new KeyListener() {
 
 			@Override
 			public void keyTyped(KeyEvent e) {
@@ -551,9 +618,10 @@ public class Z {
 				if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
 					display.getContentPane().remove(editor.getEditorPanel());
 					editors.remove(editor);
-					state = State.ANIMATING;
-					scale = 1f;
-					clicked(z);
+					if (editors.isEmpty()) {
+						scale = 1f;
+						clicked(z);
+					}
 				} else if (e.getKeyCode() == KeyEvent.VK_F1) {
 					try {
 						display.showEditorHelp();
@@ -562,7 +630,11 @@ public class Z {
 					}
 				}
 			}
-		});
+		};
+		editor.getEditorPanel().addKeyListener(keyAdapter);
+		for (Component c : editor.getEditorPanel().getComponents()) {
+			c.addKeyListener(keyAdapter);
+		}
 		editors.add(0, editor);
 		final int size = (int) z.getSize();
 		editor.getEditorPanel().setSize(new Dimension(size, size));
@@ -571,6 +643,11 @@ public class Z {
 				(int) z.location.y - size / 2);
 		editor.setScale(0.25f);
 		state = State.ANIMATING;
+		aniCount.set(1);
+	}
+
+	public ZNode getHoveredNode() {
+		return hoveredNode;
 	}
 
 }

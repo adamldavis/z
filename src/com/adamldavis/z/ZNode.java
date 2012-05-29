@@ -130,4 +130,8 @@ public class ZNode {
 		return size;
 	}
 
+	public void setSize(float size) {
+		this.size = size;
+	}
+
 }

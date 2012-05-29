@@ -20,13 +20,16 @@ import org.slf4j.LoggerFactory;
 
 import com.adamldavis.z.ZNode;
 import com.adamldavis.z.ZNode.ZNodeType;
+import com.adamldavis.z.api.Compiler;
 import com.adamldavis.z.api.LanguageParser;
+import com.adamldavis.z.api.LineError;
+import com.adamldavis.z.api.ProgressListener;
 
 /**
  * @author Adam L. Davis
  * 
  */
-public class RubyParser implements LanguageParser {
+public class RubyParser implements LanguageParser, Compiler {
 
 	private static final Logger log = LoggerFactory.getLogger(RubyParser.class);
 
@@ -273,6 +276,12 @@ public class RubyParser implements LanguageParser {
 			return i + 1;
 		}
 		return findCommentEnd(code, i + 1);
+	}
+
+	@Override
+	public List<LineError> compile(ZNode node, ProgressListener listener) {
+		// TODO do nothing since ruby is dynamic
+		return new LinkedList<LineError>();
 	}
 
 }

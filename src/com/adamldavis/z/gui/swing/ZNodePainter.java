@@ -40,7 +40,7 @@ public class ZNodePainter extends Graphics2DPainter implements Painter {
 		float size = scale(node.getSize());
 		final int x = scale(node.location.x - size * 0.5f);
 		final int y = scale(node.location.y - size * 0.5f);
-		final int isize = (int) size;
+		final int isize = Math.round(size);
 		Graphics2D g2d = this.graphics2d;
 
 		g2d.setColor(g2d.getBackground());
@@ -51,9 +51,9 @@ public class ZNodePainter extends Graphics2DPainter implements Painter {
 			g2d.drawRect(x, y, isize, isize);
 			break;
 		case METHOD:
-			g2d.fillRect(x, y, isize, (int) (isize * 0.75));
+			g2d.fillRect(x, y + isize / 8, isize, (int) (isize * 0.75));
 			g2d.setColor(color);
-			g2d.drawRect(x, y, isize, (int) (isize * 0.75));
+			g2d.drawRect(x, y + isize / 8, isize, (int) (isize * 0.75));
 			break;
 		case MODULE:
 			g2d.fillOval(x + 1, y + 1, isize - 2, isize - 2);
@@ -61,9 +61,9 @@ public class ZNodePainter extends Graphics2DPainter implements Painter {
 			g2d.drawOval(x, y, isize, isize);
 			break;
 		case PACKAGE:
-			g2d.fillOval(x, y, isize, (int) (isize * 0.75));
+			g2d.fillOval(x, y + isize / 8, isize, (int) (isize * 0.75));
 			g2d.setColor(color);
-			g2d.drawOval(x, y, isize, (int) (isize * 0.75));
+			g2d.drawOval(x, y + isize / 8, isize, (int) (isize * 0.75));
 			break;
 		case DEPENDENCY:
 			g2d.fillOval(x + 1, y + 1, isize - 2, isize - 2);
@@ -81,9 +81,9 @@ public class ZNodePainter extends Graphics2DPainter implements Painter {
 		}
 		if (node.name != null) {
 			g2d.setFont(g2d.getFont().deriveFont(Math.max(size * 16 / 80, 5)));
-			g2d.drawString(node.name, x - 1, y - 1);
+			g2d.drawString(node.name, x - 1, y + isize / 8);
 		}
-		if (node.getCodeLines() != null) {
+		if (node.getCodeLines() != null && isize > 20) {
 			Point point2 = new Point(x + isize + 1, y + isize / 2);
 			final float codeSize = Math.max(size * 1 / 8, 5);
 			g2d.setFont(g2d.getFont().deriveFont(codeSize));
@@ -92,15 +92,17 @@ public class ZNodePainter extends Graphics2DPainter implements Painter {
 			int i = 1;
 			for (String line : node.getCodeLines()) {
 				g2d.drawString(line.substring(0, Math.min(20, line.length())),
-						x + 5, y + codeSize * i);
+						x + 5, y + isize / 8 + codeSize * i);
 				if (i++ > 3)
 					break;
 			}
 		}
 	}
 
+
 	protected int scale(float xy) {
-		return (int) (xy * scale);
+		return (int) (xy * scale) + 1;
+		
 	}
 
 }
