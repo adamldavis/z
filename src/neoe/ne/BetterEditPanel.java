@@ -69,4 +69,8 @@ public class BetterEditPanel extends EditPanel {
 		// getParent().doLayout();
 	}
 
+	public void setText(String s) {
+		page.ptEdit.setText(s);
+	}
+
 }
