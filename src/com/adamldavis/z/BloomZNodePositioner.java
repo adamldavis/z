@@ -6,7 +6,8 @@ import java.awt.geom.Point2D;
 
 public class BloomZNodePositioner extends AbstractZNodePositioner {
 
-	static final int maxSize = 15;
+	// max to show in one bloom
+	private static final int MAX = 15;
 
 	@Override
 	protected Point2D getDependencyPosition(ZNode node, int index, int size) {
@@ -19,21 +20,27 @@ public class BloomZNodePositioner extends AbstractZNodePositioner {
 	}
 
 	private Point2D getXPoint(final double start, int index, int size) {
-		return getXPoint(getYAngle(start, index, size), index / maxSize);
+		int halfSz = Math.max(1, size / 2);
+		final int ring = size <= MAX ? 0 : (int) (index / halfSz);
+
+		return getXPoint(getYAngle(start, index, size), ring);
 	}
 
-	private Point2D getXPoint(final double angle, int pow) {
-		float x = (float) (Math.cos(angle) * 0.8 * Math.pow(0.5, pow));
-		float y = (float) (Math.sin(angle) * 0.8 * Math.pow(0.5, pow));
+	// two rings 0 = outside, 1 = inside
+	private Point2D getXPoint(final double angle, int ring) {
+		float x = (float) (Math.cos(angle) * (0.8 - ring * 0.4));
+		float y = (float) (Math.sin(angle) * (0.8 - ring * 0.4));
 
 		return new Point2D.Float(x, y);
 	}
 
 	private double getYAngle(final double start, int index, int size) {
-		int smin = Math.min(maxSize, size);
-		final double smin1 = smin + 1.0;
+		assert size >= 0;
+		int halfSz = Math.max(1, size / 2);
+		final double hfsp1 = size <= MAX ? (size + 1) : (halfSz + 1);
+		final int mod = size <= MAX ? index : index % halfSz;
 
-		return Math.PI * (start + (1.0 / smin1) + (index % maxSize / smin1));
+		return Math.PI * (start + (1.0 / hfsp1) + (mod / hfsp1));
 	}
 
 }
