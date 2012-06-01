@@ -21,4 +21,7 @@ public interface DependencyManager {
 
 	void save(ZNode dependencyNode);
 
+	/** folder for binaries of compiled code (or src if dynamic). */
+	File getCompiledFolder(File dependencyFile);
+
 }

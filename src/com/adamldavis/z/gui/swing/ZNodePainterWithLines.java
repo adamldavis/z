@@ -27,17 +27,17 @@ public class ZNodePainterWithLines extends ZNodePainter {
 	}
 
 	void drawLines(ZNode node, Graphics2D g2d) {
-		for (ZNode dep : node.dependencies) {
+		for (ZNode dep : node.getDependencies()) {
 			g2d.setColor(Color.WHITE);
 			g2d.setStroke(new BasicStroke(1f));
-			g2d.drawLine(scale(node.location.x), scale(node.location.y),
-					scale(dep.location.x), scale(dep.location.y));
+			g2d.drawLine(scale(node.getLocation().x), scale(node.getLocation().y),
+					scale(dep.getLocation().x), scale(dep.getLocation().y));
 		}
-		for (ZNode sub : node.submodules) {
+		for (ZNode sub : node.getSubmodules()) {
 			g2d.setColor(Color.blue);
 			g2d.setStroke(new BasicStroke(2f));
-			g2d.drawLine(scale(node.location.x), scale(node.location.y),
-					scale(sub.location.x), scale(sub.location.y));
+			g2d.drawLine(scale(node.getLocation().x), scale(node.getLocation().y),
+					scale(sub.getLocation().x), scale(sub.getLocation().y));
 		}
 	}
 

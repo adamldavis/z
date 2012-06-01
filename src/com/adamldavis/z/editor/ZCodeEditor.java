@@ -1,5 +1,7 @@
 package com.adamldavis.z.editor;
 
+import java.awt.event.KeyListener;
+
 import javax.swing.JPanel;
 
 import neoe.ne.EditorAdapter;
@@ -39,6 +41,10 @@ public class ZCodeEditor extends EditorAdapter {
 		log.info("Saving: {}", zNode);
 		zNode.replaceCode(getText());
 		new ZCodeSaver(apiFactory).save(zNode);
+	}
+
+	public void addKeyListener(KeyListener keyAdapter) {
+		editor.addKeyListener(keyAdapter);
 	}
 
 }

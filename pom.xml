@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-    <modelVersion>4.0.0</modelVersion>
+    <name>Zeta Code</name>
     <groupId>com.adamldavis</groupId>
     <artifactId>z</artifactId>
-    <name>z code</name>
-    <version>0.1-beta-1</version>
+    <version>0.1-beta-2</version>
     <url>http://adamldavis.com</url>
+    <modelVersion>4.0.0</modelVersion>
     <organization>
         <name>Adam L. Davis</name>
     </organization>

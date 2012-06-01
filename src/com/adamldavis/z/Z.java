@@ -1,7 +1,7 @@
 /** Copyright 2012, Adam L. Davis. */
 package com.adamldavis.z;
 
-import java.awt.Component;
+import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
@@ -113,6 +113,10 @@ public class Z {
 
 	private ZNode hoveredNode;
 
+	private String hoverText;
+
+	private Point mouseLocation;
+
 	public Z() {
 		display.addMouseWheelListener(new MouseWheelListener() {
 
@@ -173,8 +177,8 @@ public class Z {
 						} else
 							dragged(z);
 					} else {
-						draggedNode.location
-								.setLocation(translateToZNodePoint(point2));
+						draggedNode.getLocation().setLocation(
+								translateToZNodePoint(point2));
 						draggedNode = null;
 					}
 					point1 = point2 = null;
@@ -195,7 +199,7 @@ public class Z {
 					} else {
 						final ZNode dep = createNewZ(p, ZNodeType.DEPENDENCY);
 						if (dep != null)
-							selectedNode.dependencies.add(dep);
+							selectedNode.getDependencies().add(dep);
 					}
 				} else if (e.getButton() == MouseEvent.BUTTON1
 						&& !e.isControlDown()) {
@@ -211,13 +215,14 @@ public class Z {
 					return;
 				}
 				if (hoveredNode != node && hoveredNode != null) {
-					hoveredNode.setSize(hoveredNode.getSize() * 2 / 3);
+					hoveredNode.setSize(hoveredNode.getSize() * 1f / 1.1f);
 				}
 				if (node != null && hoveredNode != node) {
-					node.setSize(node.getSize() * 3 / 2);
+					node.setSize(node.getSize() * 1.1f);
 				}
 				hoveredNode = node;
-
+				hoverText = node == null ? null : node.getName();
+				mouseLocation = e.getPoint();
 			}
 		});
 		zfactory = new ZFactory(Z.class.getResourceAsStream("z.properties"));
@@ -244,13 +249,13 @@ public class Z {
 	}
 
 	public void activateGoUp() {
-		File pFile = selectedNode.parentFile;
+		File pFile = selectedNode.getParentFile();
 
-		if (selectedNode.zNodeType == ZNodeType.PACKAGE) {
-			for (int i = 0; i < selectedNode.name.split("\\.").length; i++) {
+		if (selectedNode.getNodeType() == ZNodeType.PACKAGE) {
+			for (int i = 0; i < selectedNode.getName().split("\\.").length; i++) {
 				pFile = pFile.getParentFile();
 			}
-		} else if (selectedNode.zNodeType == ZNodeType.MODULE) {
+		} else if (selectedNode.getNodeType() == ZNodeType.MODULE) {
 			pFile = pFile.getParentFile();
 		}
 		selectedNode = new ZCodeLoader(apiFactory).load(pFile);
@@ -281,8 +286,8 @@ public class Z {
 	protected void dragged(ZNode z) {
 		log.info("dragged: " + z);
 		// create dependency on z?
-		if (z.zNodeType == ZNodeType.DEPENDENCY)
-			selectedNode.dependencies.add(z);
+		if (z.getNodeType() == ZNodeType.DEPENDENCY)
+			selectedNode.getDependencies().add(z);
 	}
 
 	AtomicInteger count = new AtomicInteger(0);
@@ -300,8 +305,8 @@ public class Z {
 		selectedNode = new ZCodeLoader(apiFactory).load(node);
 		zNodes.clear();
 		zNodes.add(selectedNode);
-		zNodes.addAll(selectedNode.dependencies);
-		zNodes.addAll(selectedNode.submodules);
+		zNodes.addAll(selectedNode.getDependencies());
+		zNodes.addAll(selectedNode.getSubmodules());
 		count.set(0);
 
 		state = State.ANIMATING;
@@ -315,18 +320,18 @@ public class Z {
 				(float) Math.min(dim.getWidth(), dim.getHeight()) / 2);
 		Map<ZNode, Point2D> depMap = new HashMap<ZNode, Point2D>();
 
-		for (ZNode dep : selectedNode.dependencies) {
+		for (ZNode dep : selectedNode.getDependencies()) {
 			depMap.put(dep, pointMap.get(dep));
 		}
-		for (ZNode sub : selectedNode.submodules) {
+		for (ZNode sub : selectedNode.getSubmodules()) {
 			Point2D loc = pointMap.get(sub);
 			final Point center = new Point((int) Math.round(loc.getX()),
 					(int) Math.round(loc.getY()));
 			sub = new ZCodeLoader(apiFactory).load(sub);
 			float size = (float) (dim.getHeight() * 0.10416666666666);
-			sizeMap.put(sub, size + logSize(sub.submodules.size()));
-			zNodes.addAll(sub.submodules);
-			for (ZNode sub2 : sub.submodules) {
+			sizeMap.put(sub, size + logSize(sub.getSubmodules().size()));
+			zNodes.addAll(sub.getSubmodules());
+			for (ZNode sub2 : sub.getSubmodules()) {
 				sizeMap.put(sub2, size / 8f + logSize(sub2.getCodeLineSize()));
 			}
 			pointMap.putAll(new PixelZNodePositioner(center, new Dimension(
@@ -342,13 +347,13 @@ public class Z {
 	}
 
 	private void sortNodes() {
-		Collections.sort(selectedNode.submodules, new Comparator<ZNode>() {
+		Collections.sort(selectedNode.getSubmodules(), new Comparator<ZNode>() {
 
 			@Override
 			public int compare(ZNode node1, ZNode node2) {
 				switch (order) {
 				case ALPHA:
-					return node1.name.compareTo(node2.name);
+					return node1.getName().compareTo(node2.getName());
 				case SIZE:
 					return node1.getCodeLineSize() - node2.getCodeLineSize();
 				case TIME:
@@ -384,10 +389,15 @@ public class Z {
 	public ZFactory zfactory;
 
 	public void run() {
-		if (state == State.ANIMATING && aniCount.incrementAndGet() >= 100) {
-			state = State.NORMAL;
-			if (editors.size() > 0) {
-				state = State.EDITING;
+		if (aniCount.incrementAndGet() >= 100) {
+			if (state == State.ANIMATING) {
+				state = State.NORMAL;
+			} else if (state == State.SELECTING) {
+				if (editors.isEmpty()) {
+					state = State.NORMAL;
+				} else {
+					state = State.EDITING;
+				}
 			}
 		}
 		count.incrementAndGet();
@@ -396,20 +406,24 @@ public class Z {
 		}
 		final float time = aniCount.get() / 100f;
 
-		if (getState() == State.ANIMATING && getEditors().size() == 1) {
+		if (getState() == State.SELECTING) {
 			Editor ed = getEditors().get(0);
+			int y = 8 + (editors.size() == 1 ? 0 : editors.get(1)
+					.getEditorPanel().getY()
+					+ editors.get(1).getEditorPanel().getHeight());
 			ed.setScale(0.25f + 0.75f * time);
-			final Point2D point = animator.animate(getSelectedNode().location,
-					new Point2D.Float(0, 0), time, AnimationType.COSINE);
+			final Point2D point = animator.animate(getSelectedNode()
+					.getLocation(), new Point2D.Float(8, y), time,
+					AnimationType.COSINE);
 			ed.getEditorPanel().setLocation((int) point.getX(),
 					(int) point.getY());
-			return;
-		}
-		if (getState() == State.ANIMATING)
+		} else if (getState() == State.ANIMATING)
 			for (ZNode node : zNodes) {
 				if (pointMap.containsKey(node)) {
-					node.location.setLocation(animator.animate(node.location,
-							pointMap.get(node), time, AnimationType.COSINE));
+					node.getLocation().setLocation(
+							animator.animate(node.getLocation(),
+									pointMap.get(node), time,
+									AnimationType.COSINE));
 				}
 				if (sizeMap.containsKey(node)) {
 					final Float size = sizeMap.get(node);
@@ -427,7 +441,7 @@ public class Z {
 
 		for (ZNode z : zNodes) {
 			final double hs = z.getSize() * scale * 0.5;
-			if (translateToDisplayPoint(z.location).distance(p.x, p.y) < hs) {
+			if (translateToDisplayPoint(z.getLocation()).distance(p.x, p.y) < hs) {
 				found = z;
 			}
 		}
@@ -435,23 +449,29 @@ public class Z {
 	}
 
 	public void createSubNode(Point point) {
-		if (selectedNode != null && selectedNode.zNodeType != ZNodeType.METHOD
-				&& selectedNode.zNodeType != ZNodeType.DEPENDENCY) {
+		if (selectedNode != null) {
 			// create sub-module
 			final ZNodeType subtype;
-			switch (selectedNode.zNodeType) {
+			switch (selectedNode.getNodeType()) {
+			case METHOD:
+				subtype = ZNodeType.CALLEE;
+				break;
 			case CLASS:
 				subtype = ZNodeType.METHOD;
 				break;
 			case PACKAGE:
 				subtype = ZNodeType.CLASS;
 				break;
+			case CALLEE:
+			case CALLER:
+			case DEPENDENCY:
+				return;
 			default:
 				subtype = ZNodeType.PACKAGE;
 			}
 			ZNode sub = createNewZ(point, subtype);
 			if (sub != null)
-				selectedNode.submodules.add(sub);
+				selectedNode.getSubmodules().add(sub);
 		}
 	}
 
@@ -463,19 +483,21 @@ public class Z {
 		}
 		final Point2D.Float zp = translateToZNodePoint(point);
 		final ZNode zNode = new ZNode(zp.x, zp.y, name.trim());
-		zNode.zNodeType = type;
-		zNode.parentFile = selectedNode.parentFile;
+		zNode.setNodeType(type);
+		zNode.setParentFile(selectedNode.getParentFile());
 		zNodes.add(zNode);
 		if (type == ZNodeType.METHOD) {
-			zNode.parentFile = new File(selectedNode.parentFile,
-					selectedNode.name + "." + selectedNode.extension);
+			zNode.setParentFile(new File(selectedNode.getParentFile(),
+					selectedNode.getName() + "." + selectedNode.getExtension()));
 			int end = selectedNode.getEndLineNumber(apiFactory
 					.getLanguageParser());
-			for (ZNode method : selectedNode.submodules) {
+			for (ZNode method : selectedNode.getSubmodules()) {
 				end += method.getCodeLineSize();
 			}
-			zNode.extension = String.valueOf(end);
-			System.err.println("ext=" + zNode.extension);
+			zNode.setExtension(String.valueOf(end));
+			System.err.println("ext=" + zNode.getExtension());
+		} else if (type == ZNodeType.CALLEE) {
+			selectedNode.addCodeLine(zNode.getName());
 		}
 		new ZCodeSaver(apiFactory).save(zNode);
 		return zNode;
@@ -588,7 +610,8 @@ public class Z {
 	}
 
 	public void showNewEditor(final ZNode z) {
-		final ZCodeEditor editor = z.zNodeType == ZNodeType.METHOD ? new ZCodeEditorPlus(
+		selectedNode = z;
+		final ZCodeEditor editor = z.getNodeType() == ZNodeType.METHOD ? new ZCodeEditorPlus(
 				z, apiFactory) : new ZCodeEditor(z, apiFactory);
 		final KeyListener keyAdapter = new KeyListener() {
 
@@ -603,7 +626,7 @@ public class Z {
 							} catch (InterruptedException e) {
 							}
 							editor.save();
-							Swutil.flashMessage(display, "Saved " + z.name);
+							Swutil.flashMessage(display, "Saved " + z.getName());
 						}
 					});
 				}
@@ -616,38 +639,50 @@ public class Z {
 			@Override
 			public void keyPressed(KeyEvent e) {
 				if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
-					display.getContentPane().remove(editor.getEditorPanel());
-					editors.remove(editor);
-					if (editors.isEmpty()) {
-						scale = 1f;
-						clicked(z);
-					}
+					for (Editor ed : editors)
+						display.getContentPane().remove(ed.getEditorPanel());
+
+					state = State.NORMAL;
+					display.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+					clicked(selectedNode);
 				} else if (e.getKeyCode() == KeyEvent.VK_F1) {
 					try {
 						display.showEditorHelp();
 					} catch (IOException e1) {
 						log.error(e1.getMessage());
 					}
+					display.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
 				}
 			}
 		};
-		editor.getEditorPanel().addKeyListener(keyAdapter);
-		for (Component c : editor.getEditorPanel().getComponents()) {
-			c.addKeyListener(keyAdapter);
-		}
+		editor.addKeyListener(keyAdapter);
 		editors.add(0, editor);
 		final int size = (int) z.getSize();
 		editor.getEditorPanel().setSize(new Dimension(size, size));
-		display.getContentPane().add(editor.getEditorPanel());
-		editor.getEditorPanel().setLocation((int) z.location.x - size / 2,
-				(int) z.location.y - size / 2);
+		for (Editor ed : editors)
+			display.getContentPane().add(ed.getEditorPanel());
+
+		editor.getEditorPanel().setLocation((int) z.getLocation().x - size / 2,
+				(int) z.getLocation().y - size / 2);
 		editor.setScale(0.25f);
-		state = State.ANIMATING;
-		aniCount.set(1);
+		state = State.SELECTING;
+		aniCount.set(10);
 	}
 
 	public ZNode getHoveredNode() {
 		return hoveredNode;
+	}
+
+	public String getHoverText() {
+		return hoverText;
+	}
+
+	public void setHoverText(String hoverText) {
+		this.hoverText = hoverText;
+	}
+
+	public Point getMouseLocation() {
+		return mouseLocation;
 	}
 
 }

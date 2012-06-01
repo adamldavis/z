@@ -5,6 +5,7 @@ import java.awt.BorderLayout;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.io.File;
+import java.io.FilenameFilter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -21,6 +22,7 @@ import com.adamldavis.z.ZNode;
 import com.adamldavis.z.ZNodeCompiler;
 import com.adamldavis.z.api.APIFactory;
 import com.adamldavis.z.api.CodeRunner;
+import com.adamldavis.z.api.DependencyManager;
 import com.adamldavis.z.api.LineExecution;
 import com.adamldavis.z.api.Param;
 import com.adamldavis.z.java.JavaCodeRunner;
@@ -47,9 +49,9 @@ public class ZCodeEditorPlus extends ZCodeEditor {
 		ZNode node = loader.load(new File("test", name.replace('.', '/')
 				+ ".java"));
 		node = loader.load(node);
-		for (ZNode sub : node.submodules) {
-			log.info("sub=" + sub.name);
-			if (sub.name.trim().equals("two()")) {
+		for (ZNode sub : node.getSubmodules()) {
+			log.info("sub=" + sub.getName());
+			if (sub.getName().trim().equals("two()")) {
 				node = sub;
 			}
 		}
@@ -72,17 +74,42 @@ public class ZCodeEditorPlus extends ZCodeEditor {
 
 	// TODO make this general
 	public ZCodeEditorPlus(final ZNode node, final APIFactory apiFactory) {
-		this(node, apiFactory, getClassName(node), new File[] {
-				new File("src/"), new File("target/classes") });
+		super(node, apiFactory);
+		this.compilePath = getPaths(apiFactory, node.getParentFile());
+		this.location = getClassName(node, compilePath[0]);
+		splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
+		init(node);
 	}
 
-	private static String getClassName(final ZNode node) {
-		return node.parentFile
-				.getAbsolutePath()
-				.substring(
-						new File("src").getAbsolutePath().length() + 1,
-						node.parentFile.getAbsolutePath().length()
-								- ".java".length()).replaceAll("[/\\\\]", ".");
+	private static String getClassName(final ZNode node, final File src) {
+		final String path = node.getParentFile().getAbsolutePath();
+		return path.substring(src.getAbsolutePath().length() + 1,
+				path.length() - ".java".length()).replaceAll("[/\\\\]", ".");
+	}
+
+	/** Source and classes. */
+	public static File[] getPaths(final APIFactory apiFactory,
+			final File parentFile) {
+		File src = new File("src");
+		File bin = new File("bin");
+		// find the pom file, get src
+		FILES: for (File parent = parentFile.isDirectory() ? parentFile
+				: parentFile.getParentFile(); parent != null; parent = parent
+				.getParentFile()) {
+			final DependencyManager dependencyManager = apiFactory
+					.getDependencyManager();
+			for (File pom : parent.listFiles(new FilenameFilter() {
+				@Override
+				public boolean accept(File dir, String name) {
+					return name.equals(dependencyManager.getStandardFileName());
+				}
+			})) {
+				src = dependencyManager.getSourceFolder(pom);
+				bin = dependencyManager.getCompiledFolder(pom);
+				break FILES;
+			}
+		}
+		return new File[] { src, bin };
 	}
 
 	public ZCodeEditorPlus(final ZNode node, final APIFactory apiFactory,
@@ -90,13 +117,17 @@ public class ZCodeEditorPlus extends ZCodeEditor {
 		super(node, apiFactory);
 		this.location = fileName;
 		this.compilePath = compilePath;
+		splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
+		init(node);
+	}
+
+	private void init(final ZNode node) {
 		try {
 			resultsEditor = new BetterEditPanel("");
 		} catch (Exception e) {
 			log.error(e.getMessage());
 		}
 		panel.remove(editor);
-		splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
 		splitPane.setLeftComponent(editor);
 		splitPane.setRightComponent(resultsEditor);
 		splitPane.setDividerLocation(100);
@@ -111,7 +142,8 @@ public class ZCodeEditorPlus extends ZCodeEditor {
 					save();
 					compile();
 					// TODO actually figure out the name
-					runMethod(node.name.substring(0, node.name.indexOf('(')));
+					runMethod(node.getName().substring(0,
+							node.getName().indexOf('(')));
 				}
 			}
 		});

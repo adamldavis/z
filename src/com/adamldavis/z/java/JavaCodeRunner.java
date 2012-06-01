@@ -112,8 +112,10 @@ public class JavaCodeRunner implements CodeRunner {
 					packages.add(pack);
 					List<URL> urls = new LinkedList<URL>();
 					for (File cp : compilePath) {
-						urls.add(cp.toURI().toURL());
+						final URL url = cp.toURI().toURL();
+						urls.add(url);
 					}
+					log.debug("urls={}", urls);
 					classLoader = Thread.currentThread()
 							.getContextClassLoader();
 					classLoader = new URLClassLoader(urls.toArray(new URL[0]),

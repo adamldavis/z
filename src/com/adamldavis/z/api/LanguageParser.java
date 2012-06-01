@@ -19,7 +19,7 @@ public interface LanguageParser {
 	List<ZNode> getMethods(File file);
 
 	String getNonMethodPart(File file);
-	
+
 	Collection<ZNode> loadImports(File file);
 
 	boolean requiresSemicolon();
@@ -34,5 +34,8 @@ public interface LanguageParser {
 	boolean isCommentStart(CharSequence code, int i);
 
 	int findCommentEnd(CharSequence code, int i);
+
+	/** Add callers as dependencies and callee's as sub-modules. */
+	void loadMethodHierarchy(ZNode node);
 
 }

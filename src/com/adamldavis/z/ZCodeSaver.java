@@ -48,7 +48,7 @@ public class ZCodeSaver {
 		final List<String> code = new LinkedList<String>(zNode.getCodeLines());
 		int end = zNode.getEndLineNumber(languageParser);
 
-		for (ZNode method : zNode.submodules) {
+		for (ZNode method : zNode.getSubmodules()) {
 			code.addAll(end, method.getCodeLines());
 		}
 
@@ -56,27 +56,27 @@ public class ZCodeSaver {
 	}
 
 	public void save(ZNode zNode) {
-		switch (zNode.zNodeType) {
+		switch (zNode.getNodeType()) {
 		case CLASS:
-			if ("".equals(zNode.extension)) {
-				zNode.extension = languageParser.getValidFileExtensions().get(0);
+			if ("".equals(zNode.getExtension())) {
+				zNode.setExtension(languageParser.getValidFileExtensions().get(0));
 			}
-			String filename = zNode.name + "." + zNode.extension;
-			save(new File(zNode.parentFile, filename), getClassCode(zNode));
+			String filename = zNode.getName() + "." + zNode.getExtension();
+			save(new File(zNode.getParentFile(), filename), getClassCode(zNode));
 			break;
 		case PACKAGE:
-			String dir = zNode.name.replace('.', File.separatorChar);
+			String dir = zNode.getName().replace('.', File.separatorChar);
 
-			if (!zNode.parentFile.getAbsolutePath().endsWith(dir)) {
-				zNode.parentFile = new File(zNode.parentFile, dir);
-				zNode.parentFile.mkdirs(); // make dirs
+			if (!zNode.getParentFile().getAbsolutePath().endsWith(dir)) {
+				zNode.setParentFile(new File(zNode.getParentFile(), dir));
+				zNode.getParentFile().mkdirs(); // make dirs
 			}
 			if (zNode.isCodeEmpty()) {
 				zNode.replaceCode(languageParser.getPackageKeyword() + " "
-						+ zNode.name.replaceAll("\\W", ".")
+						+ zNode.getName().replaceAll("\\W", ".")
 						+ (languageParser.requiresSemicolon() ? ";" : ""));
 			}
-			save(new File(zNode.parentFile, languageParser.getPackageFilename()),
+			save(new File(zNode.getParentFile(), languageParser.getPackageFilename()),
 					zNode.getCodeLines());
 			break;
 		case MODULE:
@@ -96,15 +96,15 @@ public class ZCodeSaver {
 	private void saveMethod(ZNode zNode) {
 		int n = 0, start, end;
 		try {
-			if (zNode.extension.matches("\\d+-\\d+")) {
-				String[] split = zNode.extension.split("-");
+			if (zNode.getExtension().matches("\\d+-\\d+")) {
+				String[] split = zNode.getExtension().split("-");
 				start = Integer.parseInt(split[0]);
 				end = Integer.parseInt(split[1]);
 			} else {
 				// new method
-				start = end = Integer.parseInt(zNode.extension);
+				start = end = Integer.parseInt(zNode.getExtension());
 			}
-			final File classFile = zNode.parentFile;
+			final File classFile = zNode.getParentFile();
 			LineIterator iter = FileUtils.lineIterator(classFile);
 			File temp = File.createTempFile(classFile.getName() + "_z", null);
 
@@ -122,15 +122,15 @@ public class ZCodeSaver {
 					FileUtils.writeLines(temp, asList(line), true);
 			}
 			iter.close();
-			zNode.extension = start + "-" + (start + zNode.getCodeLineSize());
+			zNode.setExtension(start + "-" + (start + zNode.getCodeLineSize()));
 
 			if (!classFile.delete() || !temp.renameTo(classFile)) {
 				throw new RuntimeException("rename failed!");
 			}
 		} catch (NumberFormatException nfe) {
-			throw new RuntimeException("extension=" + zNode.extension);
+			throw new RuntimeException("extension=" + zNode.getExtension());
 		} catch (IOException e) {
-			throw new RuntimeException("file=" + zNode.parentFile);
+			throw new RuntimeException("file=" + zNode.getParentFile());
 		}
 	}
 

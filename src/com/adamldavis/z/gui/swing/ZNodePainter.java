@@ -38,18 +38,19 @@ public class ZNodePainter extends Graphics2DPainter implements Painter {
 	 */
 	public void draw(ZNode node, Color color) {
 		float size = scale(node.getSize());
-		final int x = scale(node.location.x - size * 0.5f);
-		final int y = scale(node.location.y - size * 0.5f);
+		final int x = scale(node.getLocation().x - size * 0.5f);
+		final int y = scale(node.getLocation().y - size * 0.5f);
 		final int isize = Math.round(size);
 		Graphics2D g2d = this.graphics2d;
 
 		g2d.setColor(g2d.getBackground());
-		switch (node.zNodeType) {
+		switch (node.getNodeType()) {
 		case CLASS:
 			g2d.fillRect(x, y, isize, isize);
 			g2d.setColor(color);
 			g2d.drawRect(x, y, isize, isize);
 			break;
+		case CALLEE:
 		case METHOD:
 			g2d.fillRect(x, y + isize / 8, isize, (int) (isize * 0.75));
 			g2d.setColor(color);
@@ -65,6 +66,7 @@ public class ZNodePainter extends Graphics2DPainter implements Painter {
 			g2d.setColor(color);
 			g2d.drawOval(x, y + isize / 8, isize, (int) (isize * 0.75));
 			break;
+		case CALLER:
 		case DEPENDENCY:
 			g2d.fillOval(x + 1, y + 1, isize - 2, isize - 2);
 			// draw dotted line circle:
@@ -79,15 +81,15 @@ public class ZNodePainter extends Graphics2DPainter implements Painter {
 			}
 			break;
 		}
-		if (node.name != null) {
+		if (node.getName() != null && isize > 20) {
 			g2d.setFont(g2d.getFont().deriveFont(Math.max(size * 16 / 80, 5)));
-			g2d.drawString(node.name, x - 1, y + isize / 8);
+			g2d.drawString(node.getName(), x - 1, y + isize / 8);
 		}
 		if (node.getCodeLines() != null && isize > 20) {
 			Point point2 = new Point(x + isize + 1, y + isize / 2);
 			final float codeSize = Math.max(size * 1 / 8, 5);
 			g2d.setFont(g2d.getFont().deriveFont(codeSize));
-			g2d.setPaint(new GradientPaint(node.location, color.darker(),
+			g2d.setPaint(new GradientPaint(node.getLocation(), color.darker(),
 					point2, Color.BLACK));
 			int i = 1;
 			for (String line : node.getCodeLines()) {
@@ -99,10 +101,9 @@ public class ZNodePainter extends Graphics2DPainter implements Painter {
 		}
 	}
 
-
 	protected int scale(float xy) {
 		return (int) (xy * scale) + 1;
-		
+
 	}
 
 }

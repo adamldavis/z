@@ -15,7 +15,7 @@ import java.io.File;
 
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
-import javax.swing.border.EtchedBorder;
+import javax.swing.border.MatteBorder;
 
 import neoe.ne.PlainPage.Paint;
 
@@ -47,7 +47,8 @@ public class EditorAdapter implements Editor, MouseListener,
 
 	public EditorAdapter() {
 		try {
-			panel.setBorder(new EtchedBorder(EtchedBorder.LOWERED));
+			panel.setBorder(new MatteBorder(EDGE_SIZE, EDGE_SIZE, EDGE_SIZE,
+					EDGE_SIZE, Color.WHITE));
 			editor = new BetterEditPanel("");
 			panel.add(editor);
 			panel.addMouseListener(this);

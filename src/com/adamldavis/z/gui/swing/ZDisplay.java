@@ -3,6 +3,7 @@ package com.adamldavis.z.gui.swing;
 
 import static java.awt.Color.BLACK;
 import static java.awt.Color.LIGHT_GRAY;
+import static java.awt.Color.WHITE;
 import static java.awt.Color.YELLOW;
 
 import java.awt.Color;
@@ -39,7 +40,7 @@ public class ZDisplay extends Display2d {
 	Z z;
 
 	public ZDisplay(Z z) {
-		super(true, 2, 35);
+		super(false, 2, 35, new Dimension(800, 600));
 		setTitle("Z");
 		this.z = z;
 		this.getContentPane().setBackground(Color.BLACK.brighter());
@@ -57,16 +58,14 @@ public class ZDisplay extends Display2d {
 		final Point point1 = z.getPoint1();
 		final Point point2 = z.getPoint2();
 
-		if (!z.getEditors().isEmpty()) {
-			return;
-		}
 		g2d.addRenderingHints(new RenderingHints(
 				RenderingHints.KEY_ANTIALIASING,
 				RenderingHints.VALUE_ANTIALIAS_ON));
 		g2d.setBackground(BLACK);
 		g2d.setColor(g2d.getBackground());
 		// g2d.fillRect(0, 0, width, height);
-		if (zNodes == null || z.getState() == State.EDITING) {
+		if (zNodes == null || z.getState() == State.EDITING
+				|| z.getState() == State.SELECTING) {
 			return;
 		}
 		final ZNodePainter nodePainter = new ZNodePainter(g2d, z.getScale(),
@@ -90,6 +89,14 @@ public class ZDisplay extends Display2d {
 			drawLine(g2d, point1.x, point1.y, point2.x, point2.y);
 			final int s = (int) z.getScale() * 80;
 			g2d.drawOval(point2.x - s / 2, point2.y - s / 2, s, s);
+		}
+		if (z.getHoverText() != null) {
+			g2d.setColor(WHITE);
+			g2d.setFont(g2d.getFont().deriveFont(20f));
+			final Point point = z.getMouseLocation();
+			final int length = z.getHoverText().length();
+			g2d.drawString(z.getHoverText(), point.x
+					- (length * 10 * point.x / width), point.y);
 		}
 	}
 

@@ -20,25 +20,25 @@ import com.adamldavis.z.api.LanguageParser;
 public class ZNode {
 
 	public enum ZNodeType {
-		MODULE, PACKAGE, CLASS, METHOD, DEPENDENCY
+		MODULE, PACKAGE, CLASS, METHOD, DEPENDENCY, CALLEE, CALLER
 	};
 
-	public Point2D.Float location;
+	private Point2D.Float location;
 	private float size = 80f; // size in 1:1 pixels
-	public ZNodeType zNodeType = ZNodeType.MODULE;
+	private ZNodeType nodeType = ZNodeType.MODULE;
 
-	public String name = "";
+	private String name = "";
 	private final List<String> code = new LinkedList<String>();
 
-	public String extension = "";
-	public File parentFile = new File("./");
+	private String extension = "";
+	private File parentFile = new File("./");
 
-	public final List<ZNode> dependencies = new ArrayList<ZNode>();
-	public final List<ZNode> submodules = new ArrayList<ZNode>();
+	private final List<ZNode> dependencies = new ArrayList<ZNode>();
+	private final List<ZNode> submodules = new ArrayList<ZNode>();
 	private long lastModified = System.currentTimeMillis();
 
 	public ZNode() {
-		location = new Point2D.Float(0, 0);
+		setLocation(new Point2D.Float(0, 0));
 	}
 
 	public ZNode(float x, float y) {
@@ -46,19 +46,19 @@ public class ZNode {
 	}
 
 	public ZNode(float x, float y, String name) {
-		location = new Point2D.Float(x, y);
-		this.name = name;
+		setLocation(new Point2D.Float(x, y));
+		this.setName(name);
 	}
 
 	public ZNode(ZNodeType zNodeType, String name, String code,
 			String extension, File parentFile) {
 		this();
-		this.zNodeType = zNodeType;
-		this.name = name;
+		this.setNodeType(zNodeType);
+		this.setName(name);
 		setCode(code);
-		this.extension = extension;
+		this.setExtension(extension);
 		this.lastModified = parentFile.lastModified();
-		this.parentFile = parentFile;
+		this.setParentFile(parentFile);
 	}
 
 	/** Is code empty? */
@@ -123,7 +123,7 @@ public class ZNode {
 
 	@Override
 	public String toString() {
-		return name;
+		return getName();
 	}
 
 	public float getSize() {
@@ -132,6 +132,54 @@ public class ZNode {
 
 	public void setSize(float size) {
 		this.size = size;
+	}
+
+	public void setParentFile(File parentFile) {
+		this.parentFile = parentFile;
+	}
+
+	public File getParentFile() {
+		return parentFile;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public void setLocation(Point2D.Float location) {
+		this.location = location;
+	}
+
+	public Point2D.Float getLocation() {
+		return location;
+	}
+
+	public void setNodeType(ZNodeType zNodeType) {
+		this.nodeType = zNodeType;
+	}
+
+	public ZNodeType getNodeType() {
+		return nodeType;
+	}
+
+	public void setExtension(String extension) {
+		this.extension = extension;
+	}
+
+	public String getExtension() {
+		return extension;
+	}
+
+	public List<ZNode> getDependencies() {
+		return dependencies;
+	}
+
+	public List<ZNode> getSubmodules() {
+		return submodules;
 	}
 
 }

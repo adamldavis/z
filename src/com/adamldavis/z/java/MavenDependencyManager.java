@@ -148,7 +148,7 @@ public class MavenDependencyManager implements DependencyManager {
 								dependencyFile, list);
 
 						for (ZNode node : dependencies) {
-							node.parentFile = dependencyFile.getParentFile();
+							node.setParentFile(dependencyFile.getParentFile());
 						}
 						return dependencies;
 					}
@@ -230,7 +230,7 @@ public class MavenDependencyManager implements DependencyManager {
 
 	@Override
 	public void save(final ZNode zNode) {
-		final File file = new File(zNode.parentFile, getStandardFileName());
+		final File file = new File(zNode.getParentFile(), getStandardFileName());
 
 		try {
 			final DocumentBuilder docBuilder = DocumentBuilderFactory
@@ -254,7 +254,7 @@ public class MavenDependencyManager implements DependencyManager {
 			}
 			final Node deps = depsList.item(0);
 
-			if (zNode.zNodeType == ZNodeType.DEPENDENCY) {
+			if (zNode.getNodeType() == ZNodeType.DEPENDENCY) {
 				saveDependencyNode(zNode, doc, deps);
 			} else {
 				unflatten(doc, zNode.getCodeLines(), doc.getDocumentElement());
@@ -285,7 +285,7 @@ public class MavenDependencyManager implements DependencyManager {
 			final Node item = dependencyNodes.item(i);
 
 			if (DEPENDENCY.equals(item.getNodeName())) {
-				if (zNode.name.equals(getNodeContent(ARTIFACT_ID, item))) {
+				if (zNode.getName().equals(getNodeContent(ARTIFACT_ID, item))) {
 					dependency = item;
 					break;
 				}
@@ -346,6 +346,27 @@ public class MavenDependencyManager implements DependencyManager {
 			child.setTextContent(line.substring(line.indexOf('=') + 1));
 			node.appendChild(child);
 		}
+	}
+
+	@Override
+	public File getCompiledFolder(final File dependencyFile) {
+		File file = new File(dependencyFile.getParentFile(), "target/classes/");
+
+		return doInXmlFile(file, dependencyFile, new DoInXmlCallback<File>() {
+
+			@Override
+			public File doInXml(Document doc, long lastModified, File file)
+					throws ParserConfigurationException, SAXException,
+					IOException, FileNotFoundException {
+				NodeList nodes = doc.getElementsByTagName("outputDirectory");
+
+				for (int i = 0; i < nodes.getLength();) {
+					return new File(dependencyFile.getParentFile(), nodes.item(
+							i).getTextContent());
+				}
+				return file;
+			}
+		});
 	}
 
 }

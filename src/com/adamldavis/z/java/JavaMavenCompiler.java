@@ -2,6 +2,7 @@
 package com.adamldavis.z.java;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
@@ -12,6 +13,7 @@ import org.slf4j.LoggerFactory;
 
 import com.adamldavis.z.ZNode;
 import com.adamldavis.z.api.Compiler;
+import com.adamldavis.z.api.DependencyManager;
 import com.adamldavis.z.api.LineError;
 import com.adamldavis.z.api.ProgressListener;
 
@@ -22,6 +24,21 @@ import com.adamldavis.z.api.ProgressListener;
 public class JavaMavenCompiler implements Compiler {
 
 	static final Logger log = LoggerFactory.getLogger(JavaMavenCompiler.class);
+
+	public static File getRoot(final DependencyManager dependencyManager,
+			final File parentFile) {
+		// find the pom file
+		for (File parent = parentFile.isDirectory() ? parentFile : parentFile
+				.getParentFile(); parent != null; parent = parent
+				.getParentFile()) {
+			for (File file : parent.listFiles()) {
+				if (file.getName().equals(
+						dependencyManager.getStandardFileName()))
+					return parent;
+			}
+		}
+		return null;
+	}
 
 	/*
 	 * (non-Javadoc)
@@ -37,7 +54,11 @@ public class JavaMavenCompiler implements Compiler {
 			String m2 = System.getenv("M2_HOME");
 			log.info("m2=" + m2);
 			// TODO FIX this in linux/mac
-			Process p = Runtime.getRuntime().exec(m2 + "/bin/mvn.bat compile");
+			Process p = Runtime.getRuntime()
+					.exec(m2 + "/bin/mvn.bat compile",
+							null,
+							getRoot(new MavenDependencyManager(),
+									node.getParentFile()));
 			BufferedReader br = new BufferedReader(new InputStreamReader(
 					p.getInputStream()));
 			int i = 0;

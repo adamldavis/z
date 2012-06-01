@@ -8,10 +8,14 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.LineIterator;
@@ -35,8 +39,8 @@ public class JavaLanguageParser implements LanguageParser {
 		System.out.println(file.getAbsolutePath());
 		for (ZNode method : j.getMethods(file)) {
 			System.out.println("----------------METHOD--------------");
-			System.out.println("name=" + method.name);
-			System.out.println("ext=" + method.extension);
+			System.out.println("name=" + method.getName());
+			System.out.println("ext=" + method.getExtension());
 			System.out.println(method.getCode());
 		}
 		System.out.println("----------------CLASS--------------");
@@ -120,7 +124,7 @@ public class JavaLanguageParser implements LanguageParser {
 							}
 							method.replaceCode(code.append(line)
 									.substring(start).toString());
-							method.extension = methodStart + "-" + lineNumber;
+							method.setExtension(methodStart + "-" + lineNumber);
 							inMethod = false;
 						}
 						code.setLength(0);
@@ -354,6 +358,26 @@ public class JavaLanguageParser implements LanguageParser {
 			throw new RuntimeException(e);
 		}
 		return imports;
+	}
+
+	@Override
+	public void loadMethodHierarchy(ZNode node) {
+		// TODO make this better!
+		final Pattern methodPattern = Pattern.compile("(\\w+\\.\\w+)\\(");
+		final Set<String> methods = new HashSet<String>();
+
+		for (String line : node.getCodeLines()) {
+			Matcher matcher = methodPattern.matcher(line);
+			if (matcher.find()) {
+				String name = matcher.group(1);
+				if (!methods.contains(name)) {
+					methods.add(name);
+					node.getSubmodules().add(
+							new ZNode(ZNodeType.CALLEE, name, "", "", node
+									.getParentFile()));
+				}
+			}
+		}
 	}
 
 }

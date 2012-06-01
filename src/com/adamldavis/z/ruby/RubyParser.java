@@ -284,4 +284,10 @@ public class RubyParser implements LanguageParser, Compiler {
 		return new LinkedList<LineError>();
 	}
 
+	@Override
+	public void loadMethodHierarchy(ZNode node) {
+		// TODO Auto-generated method stub
+
+	}
+
 }

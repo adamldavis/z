@@ -124,12 +124,17 @@ public class RakeGemManager implements DependencyManager {
 	 */
 	@Override
 	public void save(ZNode dependencyNode) {
-		File file = new File(dependencyNode.parentFile, getStandardFileName());
+		File file = new File(dependencyNode.getParentFile(), getStandardFileName());
 		try {
 			FileUtils.write(file, dependencyNode.getCode());
 		} catch (IOException e) {
 			log.error(e.getMessage());
 		}
+	}
+
+	@Override
+	public File getCompiledFolder(File dependencyFile) {
+		return getSourceFolder(dependencyFile);
 	}
 
 }

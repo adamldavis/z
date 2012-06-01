@@ -13,15 +13,15 @@ public abstract class AbstractZNodePositioner implements ZNodePositioner {
 
 		map.put(selected, new Point2D.Float(0, 0));
 
-		for (ZNode node : selected.dependencies) {
+		for (ZNode node : selected.getDependencies()) {
 			map.put(node,
 					getDependencyPosition(node, i++,
-							selected.dependencies.size()));
+							selected.getDependencies().size()));
 		}
 		i = 0;
-		for (ZNode node : selected.submodules) {
+		for (ZNode node : selected.getSubmodules()) {
 			map.put(node,
-					getSubmodulePosition(node, i++, selected.submodules.size()));
+					getSubmodulePosition(node, i++, selected.getSubmodules().size()));
 		}
 		return map;
 	}
