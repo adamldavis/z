@@ -6,9 +6,11 @@ import static java.awt.Color.LIGHT_GRAY;
 import static java.awt.Color.WHITE;
 import static java.awt.Color.YELLOW;
 
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.GradientPaint;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.RenderingHints;
@@ -27,6 +29,7 @@ import com.adamldavis.swing.Swutil;
 import com.adamldavis.z.Z;
 import com.adamldavis.z.Z.State;
 import com.adamldavis.z.ZNode;
+import com.adamldavis.z.ZNodeLink;
 
 /**
  * @author Adam L. Davis
@@ -76,7 +79,7 @@ public class ZDisplay extends Display2d {
 				z.getScale(), YELLOW.darker());
 
 		for (ZNode node : zNodes) {
-			if (node == z.getSelectedNode()) {
+			if (node == z.getSelectedNode() && z.getLinks().isEmpty()) {
 				selNodePainter.paint(node);
 			} else if (node == z.getHoveredNode()) {
 				hoverPainter.paint(node);
@@ -90,13 +93,26 @@ public class ZDisplay extends Display2d {
 			final int s = (int) z.getScale() * 80;
 			g2d.drawOval(point2.x - s / 2, point2.y - s / 2, s, s);
 		}
+		g2d.setFont(g2d.getFont().deriveFont(20f));
 		if (z.getHoverText() != null) {
-			g2d.setColor(WHITE);
-			g2d.setFont(g2d.getFont().deriveFont(20f));
 			final Point point = z.getMouseLocation();
 			final int length = z.getHoverText().length();
+			g2d.setColor(WHITE);
 			g2d.drawString(z.getHoverText(), point.x
 					- (length * 10 * point.x / width), point.y);
+		}
+		g2d.setColor(LIGHT_GRAY);
+		g2d.drawRect(8, 30, 40, 20);
+		g2d.drawString("Back", 8, 42);
+		g2d.setStroke(new BasicStroke(2.0f));
+		for (ZNodeLink link : z.getLinks()) {
+			g2d.setPaint(new GradientPaint(link.getNode1().getLocation(),
+					YELLOW.darker(), link.getNode2().getLocation(), Color.BLUE
+							.darker()));
+			g2d.drawLine((int) link.getNode1().getLocation().getX(), (int) link
+					.getNode1().getLocation().getY(), (int) link.getNode2()
+					.getLocation().getX(), (int) link.getNode2().getLocation()
+					.getY());
 		}
 	}
 

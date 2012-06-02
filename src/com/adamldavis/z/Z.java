@@ -6,6 +6,7 @@ import java.awt.Dimension;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseAdapter;
@@ -26,6 +27,8 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.swing.SwingUtilities;
 
@@ -35,6 +38,7 @@ import org.slf4j.LoggerFactory;
 import com.adamldavis.swing.Swutil;
 import com.adamldavis.z.SmoothAnimator.AnimationType;
 import com.adamldavis.z.ZNode.ZNodeType;
+import com.adamldavis.z.ZNodeLink.LinkType;
 import com.adamldavis.z.api.APIFactory;
 import com.adamldavis.z.api.Editor;
 import com.adamldavis.z.editor.ZCodeEditor;
@@ -116,6 +120,8 @@ public class Z {
 	private String hoverText;
 
 	private Point mouseLocation;
+
+	private final List<ZNodeLink> links = new ArrayList<ZNodeLink>();
 
 	public Z() {
 		display.addMouseWheelListener(new MouseWheelListener() {
@@ -223,6 +229,32 @@ public class Z {
 				hoveredNode = node;
 				hoverText = node == null ? null : node.getName();
 				mouseLocation = e.getPoint();
+			}
+		});
+		display.addKeyListener(new KeyAdapter() {
+
+			@Override
+			public void keyReleased(KeyEvent e) {
+				links.clear();
+			}
+
+			@Override
+			public void keyPressed(KeyEvent e) {
+				if (!links.isEmpty())
+					return;
+				switch (e.getKeyChar()) {
+				case 'm':
+					if (selectedNode.getNodeType() == ZNodeType.CLASS) {
+						addMethodLinks();
+					}
+				case 'p':
+					// TODO: add polymorphic links
+				case 'i':
+				case 'r':
+					// TODO: add import/require links
+				case 'h':
+					// TODO: add has_a links
+				}
 			}
 		});
 		zfactory = new ZFactory(Z.class.getResourceAsStream("z.properties"));
@@ -389,7 +421,8 @@ public class Z {
 	public ZFactory zfactory;
 
 	public void run() {
-		if (aniCount.incrementAndGet() >= 100) {
+		if ((state == State.ANIMATING && aniCount.incrementAndGet() >= 100)
+				|| (state == State.SELECTING && aniCount.addAndGet(2) >= 100)) {
 			if (state == State.ANIMATING) {
 				state = State.NORMAL;
 			} else if (state == State.SELECTING) {
@@ -683,6 +716,36 @@ public class Z {
 
 	public Point getMouseLocation() {
 		return mouseLocation;
+	}
+
+	private void addMethodLinks() {
+		log.info("addMethodLinks()");
+		Map<String, ZNode> nodeMap = new HashMap<String, ZNode>();
+		Pattern patt = Pattern.compile("(\\w+)\\(");
+
+		for (ZNode method : selectedNode.getSubmodules()) {
+			final Matcher matcher = patt.matcher(method.getName());
+			if (matcher.find()) {
+				final String name = matcher.group(1);
+				nodeMap.put(name, method);
+			}
+		}
+		log.info("nodeMap={}", nodeMap);
+		for (ZNode method : selectedNode.getSubmodules()) {
+			for (ZNode call : method.getSubmodules()) {
+				// TODO fix
+				if (nodeMap.containsKey(call.getName())) {
+					links.add(new ZNodeLink(method,
+							nodeMap.get(call.getName()), LinkType.METHOD_CALL));
+				}
+			}
+		}
+		// just add 1 so there's at least 1
+		links.add(new ZNodeLink(selectedNode, selectedNode, LinkType.HAS_A));
+	}
+
+	public List<ZNodeLink> getLinks() {
+		return links;
 	}
 
 }

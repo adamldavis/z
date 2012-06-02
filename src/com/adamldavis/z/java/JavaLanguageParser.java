@@ -363,12 +363,13 @@ public class JavaLanguageParser implements LanguageParser {
 	@Override
 	public void loadMethodHierarchy(ZNode node) {
 		// TODO make this better!
-		final Pattern methodPattern = Pattern.compile("(\\w+\\.\\w+)\\(");
+		final Pattern methodPattern = Pattern.compile("([\\.\\w]+)\\(");
 		final Set<String> methods = new HashSet<String>();
+		boolean inMethod = false;
 
 		for (String line : node.getCodeLines()) {
 			Matcher matcher = methodPattern.matcher(line);
-			if (matcher.find()) {
+			if (inMethod && matcher.find()) {
 				String name = matcher.group(1);
 				if (!methods.contains(name)) {
 					methods.add(name);
@@ -376,6 +377,9 @@ public class JavaLanguageParser implements LanguageParser {
 							new ZNode(ZNodeType.CALLEE, name, "", "", node
 									.getParentFile()));
 				}
+			}
+			if (hasOpenBracket(line)) {
+				inMethod = true;
 			}
 		}
 	}
