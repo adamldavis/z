@@ -1,10 +1,13 @@
 /** Copyright 2012, Adam L. Davis, all rights reserved. */
 package com.adamldavis.z.tasks;
 
+import java.awt.geom.Point2D;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.adamldavis.z.ZNode;
@@ -31,6 +34,8 @@ public class ZTask implements Serializable {
 
 	private final Collection<ZNode> nodes = new LinkedHashSet<ZNode>();
 
+	private final Map<ZNode, Point2D.Float> positions = new HashMap<ZNode, Point2D.Float>();
+
 	public ZTask() {
 		this("Task" + idNum.getAndIncrement());
 	}
@@ -42,7 +47,21 @@ public class ZTask implements Serializable {
 
 	public ZTask add(ZNode node) {
 		nodes.add(node);
+		positions.put(node,
+				new Point2D.Float(node.getLocation().x, node.getLocation().y));
 		return this;
+	}
+
+	/** Updates my positions to current node positions. */
+	public void updatePositions() {
+		for (ZNode node : nodes)
+			positions.put(node, node.getLocation());
+	}
+
+	/** sets node positions to saved positions. */
+	public void resetPositions() {
+		for (ZNode node : nodes)
+			node.setLocation(positions.get(node));
 	}
 
 	public boolean contains(ZNode node) {
@@ -51,6 +70,7 @@ public class ZTask implements Serializable {
 
 	public ZTask remove(ZNode node) {
 		nodes.remove(node);
+		positions.remove(node);
 		return this;
 	}
 

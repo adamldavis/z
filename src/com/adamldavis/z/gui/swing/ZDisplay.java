@@ -77,12 +77,19 @@ public class ZDisplay extends Display2d {
 				Color.WHITE);
 		final ZNodePainter selNodePainter = new ZNodePainterWithLines(g2d,
 				z.getScale(), YELLOW.darker());
+		final ZNodePainter taskNodePainter = new ZNodePainter(g2d,
+				z.getScale(), Color.GREEN);
 
+		final List<ZNodeLink> links = Collections
+				.unmodifiableList(z.getLinks());
 		for (ZNode node : zNodes) {
-			if (node == z.getSelectedNode() && z.getLinks().isEmpty()) {
+			if (node == z.getSelectedNode() && links.isEmpty()) {
 				selNodePainter.paint(node);
 			} else if (node == z.getHoveredNode()) {
 				hoverPainter.paint(node);
+			} else if (z.getTaskList().getActiveTask() != null
+					&& z.getTaskList().getActiveTask().contains(node)) {
+				taskNodePainter.paint(node);
 			} else {
 				nodePainter.paint(node);
 			}
@@ -102,10 +109,10 @@ public class ZDisplay extends Display2d {
 					- (length * 10 * point.x / width), point.y);
 		}
 		g2d.setColor(LIGHT_GRAY);
-		g2d.drawRect(8, 30, 40, 20);
-		g2d.drawString("Back", 8, 42);
+		g2d.drawRect(8, 30, 42, 20);
+		g2d.drawString("Back", 8, 45);
 		g2d.setStroke(new BasicStroke(2.0f));
-		for (ZNodeLink link : z.getLinks()) {
+		for (ZNodeLink link : links) {
 			g2d.setPaint(new GradientPaint(link.getNode1().getLocation(),
 					YELLOW.darker(), link.getNode2().getLocation(), Color.BLUE
 							.darker()));
@@ -114,6 +121,8 @@ public class ZDisplay extends Display2d {
 					.getLocation().getX(), (int) link.getNode2().getLocation()
 					.getY());
 		}
+		new ZTasksPainter(g2d, height - 25, 20, z.getTaskList().getActiveTask())
+				.paint(z.getTaskList());
 	}
 
 	public Dimension getDimension() {

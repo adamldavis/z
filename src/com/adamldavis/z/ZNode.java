@@ -2,6 +2,7 @@ package com.adamldavis.z;
 
 import java.awt.geom.Point2D;
 import java.io.File;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -17,7 +18,9 @@ import com.adamldavis.z.api.LanguageParser;
  * @author Adam Davis
  * 
  */
-public class ZNode {
+public class ZNode implements Serializable {
+
+	private static final long serialVersionUID = 10101L;
 
 	public enum ZNodeType {
 		MODULE, PACKAGE, CLASS, METHOD, DEPENDENCY, CALLEE, CALLER
@@ -180,6 +183,20 @@ public class ZNode {
 
 	public List<ZNode> getSubmodules() {
 		return submodules;
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (o instanceof ZNode) {
+			ZNode node = (ZNode) o;
+			return node.name.equals(name) && node.parentFile.equals(parentFile);
+		}
+		return false;
+	}
+
+	@Override
+	public int hashCode() {
+		return name.hashCode() * 13 + parentFile.hashCode();
 	}
 
 }

@@ -7,6 +7,7 @@ import java.awt.Graphics2D;
 import java.util.Collection;
 
 import com.adamldavis.z.tasks.ZTask;
+import com.adamldavis.z.tasks.ZTaskList;
 
 /**
  * @author Adam L. Davis
@@ -37,18 +38,14 @@ public class ZTasksPainter extends Graphics2DPainter {
 	public void paint(Object object) {
 		int x = 10;
 
-		if (object instanceof Collection<?>) {
-			@SuppressWarnings("unchecked")
-			Collection<ZTask> tasks = (Collection<ZTask>) object;
+		if (object instanceof ZTaskList) {
+			ZTaskList taskList = (ZTaskList) object;
+			Collection<ZTask> tasks = taskList.getTasks();
+
 			for (ZTask task : tasks) {
 				paintTask(x, task);
 				x += task.getName().length() * height / 2 + 2;
 			}
-		}
-		if (object instanceof ZTask) {
-			final ZTask task = (ZTask) object;
-
-			paintTask(x, task);
 		}
 	}
 
@@ -66,7 +63,7 @@ public class ZTasksPainter extends Graphics2DPainter {
 		}
 		graphics2d.drawRect(x, y - height, width, height);
 		graphics2d.setFont(graphics2d.getFont().deriveFont((float) height));
-		graphics2d.drawString(name, x, y - height);
+		graphics2d.drawString(name, x, y);
 	}
 
 }

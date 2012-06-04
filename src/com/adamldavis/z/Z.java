@@ -45,6 +45,8 @@ import com.adamldavis.z.editor.ZCodeEditor;
 import com.adamldavis.z.editor.ZCodeEditorPlus;
 import com.adamldavis.z.gui.swing.ZDisplay;
 import com.adamldavis.z.gui.swing.ZMenu;
+import com.adamldavis.z.tasks.ZTask;
+import com.adamldavis.z.tasks.ZTaskList;
 
 /**
  * Main class of Z program.
@@ -123,6 +125,8 @@ public class Z {
 
 	private final List<ZNodeLink> links = new ArrayList<ZNodeLink>();
 
+	private final ZTaskList taskList = new ZTaskList();
+
 	public Z() {
 		display.addMouseWheelListener(new MouseWheelListener() {
 
@@ -182,6 +186,10 @@ public class Z {
 							createSubNode(e.getPoint());
 						} else
 							dragged(z);
+					} else if (e.getPoint().y >= display.getHeight() - 40) {
+						final ZTask task = taskList.getTaskAt(e.getPoint().x,
+								20);
+						task.add(draggedNode);
 					} else {
 						draggedNode.getLocation().setLocation(
 								translateToZNodePoint(point2));
@@ -200,6 +208,9 @@ public class Z {
 					zMenu.setVisible(false);
 					if (e.getButton() == MouseEvent.BUTTON3) {
 						activateMenu(e);
+					} else if (p.y >= display.getHeight() - 40) {
+						final ZTask task = taskList.getTaskAt(p.x, 20);
+						selectTask(task);
 					} else if (selectedNode == null) {
 						selectedNode = createNewZ(p, ZNodeType.MODULE);
 					} else {
@@ -335,10 +346,12 @@ public class Z {
 	protected void clicked(ZNode node) {
 		log.info("selected: " + node);
 		selectedNode = new ZCodeLoader(apiFactory).load(node);
-		zNodes.clear();
-		zNodes.add(selectedNode);
-		zNodes.addAll(selectedNode.getDependencies());
-		zNodes.addAll(selectedNode.getSubmodules());
+		synchronized (zNodes) {
+			zNodes.clear();
+			zNodes.add(selectedNode);
+			zNodes.addAll(selectedNode.getDependencies());
+			zNodes.addAll(selectedNode.getSubmodules());
+		}
 		count.set(0);
 
 		state = State.ANIMATING;
@@ -362,7 +375,9 @@ public class Z {
 			sub = new ZCodeLoader(apiFactory).load(sub);
 			float size = (float) (dim.getHeight() * 0.10416666666666);
 			sizeMap.put(sub, size + logSize(sub.getSubmodules().size()));
-			zNodes.addAll(sub.getSubmodules());
+			synchronized (zNodes) {
+				zNodes.addAll(sub.getSubmodules());
+			}
 			for (ZNode sub2 : sub.getSubmodules()) {
 				sizeMap.put(sub2, size / 8f + logSize(sub2.getCodeLineSize()));
 			}
@@ -451,31 +466,34 @@ public class Z {
 			ed.getEditorPanel().setLocation((int) point.getX(),
 					(int) point.getY());
 		} else if (getState() == State.ANIMATING)
-			for (ZNode node : zNodes) {
-				if (pointMap.containsKey(node)) {
-					node.getLocation().setLocation(
-							animator.animate(node.getLocation(),
-									pointMap.get(node), time,
-									AnimationType.COSINE));
-				}
-				if (sizeMap.containsKey(node)) {
-					final Float size = sizeMap.get(node);
-					final Float currentSize = node.getSize();
-					node.setSize((float) animator.animate(
-							new Point2D.Float(currentSize, 0),
-							new Point2D.Float(size, 0), time,
-							AnimationType.COSINE).getX());
+			synchronized (zNodes) {
+				for (ZNode node : zNodes) {
+					if (pointMap.containsKey(node)) {
+						node.getLocation().setLocation(
+								animator.animate(node.getLocation(),
+										pointMap.get(node), time,
+										AnimationType.COSINE));
+					}
+					if (sizeMap.containsKey(node)) {
+						final Float size = sizeMap.get(node);
+						final Float currentSize = node.getSize();
+						node.setSize((float) animator.animate(
+								new Point2D.Float(currentSize, 0),
+								new Point2D.Float(size, 0), time,
+								AnimationType.COSINE).getX());
+					}
 				}
 			}
 	}
 
 	ZNode findZNodeAt(Point p) {
 		ZNode found = null;
-
-		for (ZNode z : zNodes) {
-			final double hs = z.getSize() * scale * 0.5;
-			if (translateToDisplayPoint(z.getLocation()).distance(p.x, p.y) < hs) {
-				found = z;
+		synchronized (zNodes) {
+			for (ZNode z : zNodes) {
+				final double hs = z.getSize() * scale * 0.5;
+				if (translateToDisplayPoint(z.getLocation()).distance(p.x, p.y) < hs) {
+					found = z;
+				}
 			}
 		}
 		return found;
@@ -518,7 +536,9 @@ public class Z {
 		final ZNode zNode = new ZNode(zp.x, zp.y, name.trim());
 		zNode.setNodeType(type);
 		zNode.setParentFile(selectedNode.getParentFile());
-		zNodes.add(zNode);
+		synchronized (zNodes) {
+			zNodes.add(zNode);
+		}
 		if (type == ZNodeType.METHOD) {
 			zNode.setParentFile(new File(selectedNode.getParentFile(),
 					selectedNode.getName() + "." + selectedNode.getExtension()));
@@ -746,6 +766,28 @@ public class Z {
 
 	public List<ZNodeLink> getLinks() {
 		return links;
+	}
+
+	public ZTaskList getTaskList() {
+		return taskList;
+	}
+
+	private void selectTask(final ZTask task) {
+		if (task == taskList.getActiveTask()) {
+			taskList.setActiveTask(null);
+			clicked(selectedNode);
+			return;
+		} else if (task != null) {
+			taskList.setActiveTask(task);
+		}
+		if (task.getNodes().isEmpty()) {
+			clicked(selectedNode);
+		} else {
+			synchronized (zNodes) {
+				zNodes.clear();
+				zNodes.addAll(task.getNodes());
+			}
+		}
 	}
 
 }
