@@ -21,8 +21,8 @@ public class ZTaskList implements Serializable {
 
 	public ZTaskList() {
 		// TODO: remove
-		task1 = new ZTask("Task A");
-		task2 = new ZTask("Task B");
+		task1 = new ZTask("Fix Tasks");
+		task2 = new ZTask("Fix Editor");
 		tasks.add(task1);
 		tasks.add(task2);
 		activeTask = task1;
