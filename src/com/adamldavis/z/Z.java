@@ -1,6 +1,8 @@
 /** Copyright 2012, Adam L. Davis. */
 package com.adamldavis.z;
 
+import static java.util.Arrays.asList;
+
 import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Point;
@@ -18,6 +20,7 @@ import java.awt.geom.Point2D;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -43,6 +46,7 @@ import com.adamldavis.z.api.APIFactory;
 import com.adamldavis.z.api.Editor;
 import com.adamldavis.z.editor.ZCodeEditor;
 import com.adamldavis.z.editor.ZCodeEditorPlus;
+import com.adamldavis.z.git.GitLogDiffsMap;
 import com.adamldavis.z.gui.swing.ZDisplay;
 import com.adamldavis.z.gui.swing.ZMenu;
 import com.adamldavis.z.tasks.ZTask;
@@ -58,7 +62,7 @@ public class Z {
 
 	/** what's happening right now. */
 	public enum State {
-		NORMAL, SELECTING, ANIMATING, EDITING
+		NORMAL, SELECTING, ANIMATING, EDITING, TIME_TRAVEL
 	};
 
 	/** organization of nodes. */
@@ -127,6 +131,8 @@ public class Z {
 
 	private final ZTaskList taskList = new ZTaskList();
 
+	public GitLogDiffsMap diffsMap; // TODO make this an API
+
 	public Z() {
 		display.addMouseWheelListener(new MouseWheelListener() {
 
@@ -189,10 +195,18 @@ public class Z {
 					} else if (e.getPoint().y >= display.getHeight() - 40) {
 						final ZTask task = taskList.getTaskAt(e.getPoint().x,
 								20);
-						task.add(draggedNode);
+						if (task == null) {
+							// TODO: show confirmation?
+							synchronized (zNodes) {
+								zNodes.remove(draggedNode);
+							}
+						} else
+							task.add(draggedNode);
+						draggedNode = null;
 					} else {
 						draggedNode.getLocation().setLocation(
 								translateToZNodePoint(point2));
+						updateSubLocations(draggedNode);
 						draggedNode = null;
 					}
 					point1 = point2 = null;
@@ -214,9 +228,7 @@ public class Z {
 					} else if (selectedNode == null) {
 						selectedNode = createNewZ(p, ZNodeType.MODULE);
 					} else {
-						final ZNode dep = createNewZ(p, ZNodeType.DEPENDENCY);
-						if (dep != null)
-							selectedNode.getDependencies().add(dep);
+						createNewZ(p, ZNodeType.DEPENDENCY);
 					}
 				} else if (e.getButton() == MouseEvent.BUTTON1
 						&& !e.isControlDown()) {
@@ -258,13 +270,15 @@ public class Z {
 					if (selectedNode.getNodeType() == ZNodeType.CLASS) {
 						addMethodLinks();
 					}
+					break;
 				case 'p':
 					// TODO: add polymorphic links
 				case 'i':
 				case 'r':
 					// TODO: add import/require links
 				case 'h':
-					// TODO: add has_a links
+				case 'f':
+					addFieldLinks();
 				}
 			}
 		});
@@ -437,9 +451,11 @@ public class Z {
 
 	public void run() {
 		if ((state == State.ANIMATING && aniCount.incrementAndGet() >= 100)
+				|| (state == State.TIME_TRAVEL && aniCount.addAndGet(1) >= 999)
 				|| (state == State.SELECTING && aniCount.addAndGet(2) >= 100)) {
-			if (state == State.ANIMATING) {
+			if (state == State.ANIMATING || state == State.TIME_TRAVEL) {
 				state = State.NORMAL;
+				links.clear();
 			} else if (state == State.SELECTING) {
 				if (editors.isEmpty()) {
 					state = State.NORMAL;
@@ -484,6 +500,28 @@ public class Z {
 					}
 				}
 			}
+		else if (getState() == State.TIME_TRAVEL
+				&& aniCount.get() * diffsMap.getLogSize() / 1000 > (aniCount
+						.get() - 1) * diffsMap.getLogSize() / 1000)
+			synchronized (zNodes) {
+				final Collection<ZNodeLink> nodeLinks = diffsMap.getNodeLinks(
+						aniCount.get() * diffsMap.getLogSize() / 1000, zNodes);
+				if (!nodeLinks.isEmpty()) {
+					links.clear();
+					links.addAll(nodeLinks);
+				}
+			}
+		else if (getState() == State.TIME_TRAVEL) {
+			if (diffsMap.author != null) {
+				ZNode node = diffsMap.author;
+				float t = aniCount.get() % 100 / 100f;
+
+				node.getLocation().setLocation(
+						animator.animate(node.getLocation(),
+								diffsMap.authorLocation, t,
+								AnimationType.COSINE));
+			}
+		}
 	}
 
 	ZNode findZNodeAt(Point p) {
@@ -526,9 +564,26 @@ public class Z {
 		}
 	}
 
-	ZNode createNewZ(Point point, ZNodeType type) {
-		final String name = display.showInputDialog(
-				"Name for new " + type.name(), "Z");
+	ZNode createNewZ(final Point point, final ZNodeType type) {
+		String name = null;
+
+		if (type == ZNodeType.DEPENDENCY) {
+			new Thread(new Runnable() {
+				@Override
+				public void run() {
+					ZNode dep = createNewZNode(point, type,
+							new FakeDependencySelector().get());
+					if (dep != null)
+						selectedNode.getDependencies().add(dep);
+				}
+			}).start();
+		} else {
+			name = display.showInputDialog("Name for new " + type.name(), "Z");
+		}
+		return createNewZNode(point, type, name);
+	}
+
+	private ZNode createNewZNode(Point point, ZNodeType type, String name) {
 		if (name == null) {
 			return null;
 		}
@@ -536,6 +591,9 @@ public class Z {
 		final ZNode zNode = new ZNode(zp.x, zp.y, name.trim());
 		zNode.setNodeType(type);
 		zNode.setParentFile(selectedNode.getParentFile());
+		if (type == ZNodeType.DEPENDENCY) {
+			zNode.setCode(asList("artifactId=" + name, "groupId=" + name));
+		}
 		synchronized (zNodes) {
 			zNodes.add(zNode);
 		}
@@ -692,12 +750,20 @@ public class Z {
 			@Override
 			public void keyPressed(KeyEvent e) {
 				if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
+					editor.save();
 					for (Editor ed : editors)
 						display.getContentPane().remove(ed.getEditorPanel());
 
 					state = State.NORMAL;
 					display.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
 					clicked(selectedNode);
+				} else if (e.getKeyCode() == KeyEvent.VK_S && e.isControlDown()) {
+					editor.save();
+				} else if (e.getKeyCode() == KeyEvent.VK_W && e.isControlDown()) {
+					// close just this editor.
+					editors.remove(editor);
+					display.getContentPane().remove(editor.getEditorPanel());
+					display.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
 				} else if (e.getKeyCode() == KeyEvent.VK_F1) {
 					try {
 						display.showEditorHelp();
@@ -740,8 +806,8 @@ public class Z {
 
 	private void addMethodLinks() {
 		log.info("addMethodLinks()");
-		Map<String, ZNode> nodeMap = new HashMap<String, ZNode>();
-		Pattern patt = Pattern.compile("(\\w+)\\(");
+		final Map<String, ZNode> nodeMap = new HashMap<String, ZNode>();
+		final Pattern patt = Pattern.compile("(\\w+)\\(");
 
 		for (ZNode method : selectedNode.getSubmodules()) {
 			final Matcher matcher = patt.matcher(method.getName());
@@ -757,6 +823,35 @@ public class Z {
 				if (nodeMap.containsKey(call.getName())) {
 					links.add(new ZNodeLink(method,
 							nodeMap.get(call.getName()), LinkType.METHOD_CALL));
+				}
+			}
+		}
+		// just add 1 so there's at least 1
+		links.add(new ZNodeLink(selectedNode, selectedNode, LinkType.HAS_A));
+	}
+
+	protected void addFieldLinks() {
+		log.info("addFieldLinks()");
+		final Map<String, ZNode> nodeMap = new HashMap<String, ZNode>();
+		final Pattern patt = Pattern
+				.compile("(private |protected |public |final |static )+\\s*(\\w+)");
+
+		// TODO redo this to actually include packages
+		for (ZNode node : selectedNode.getSubmodules()) {
+			if (node.getNodeType() == ZNodeType.CLASS) {
+				nodeMap.put(node.getName(), node);
+			}
+		}
+		log.info("nodeMap={}", nodeMap);
+		for (ZNode node : selectedNode.getSubmodules()) {
+			for (String line : node.getCodeLines()) {
+				final Matcher matcher = patt.matcher(line);
+				if (matcher.find()) {
+					log.info("group2={}", matcher.group(2));
+					if (nodeMap.containsKey(matcher.group(2))) {
+						links.add(new ZNodeLink(node, nodeMap.get(matcher
+								.group(2)), LinkType.HAS_A));
+					}
 				}
 			}
 		}
@@ -788,6 +883,24 @@ public class Z {
 				zNodes.addAll(task.getNodes());
 			}
 		}
+	}
+
+	private void updateSubLocations(ZNode node) {
+		final Point2D loc = node.getLocation();
+		final Point center = new Point((int) Math.round(loc.getX()),
+				(int) Math.round(loc.getY()));
+		final Dimension dim = display.getDimension();
+		Map<ZNode, Point2D> map = new PixelZNodePositioner(center,
+				new Dimension(dim.width / 10, dim.height / 10),
+				new DirectionZNodePositioner(direction, makeNodePositioner()))
+				.getNewPositions(node);
+		for (ZNode sub : node.getSubmodules()) {
+			sub.setLocation((java.awt.geom.Point2D.Float) map.get(sub));
+		}
+	}
+
+	public void setState(State state) {
+		this.state = state;
 	}
 
 }

@@ -2,6 +2,7 @@ package com.adamldavis.z;
 
 import static java.util.Arrays.asList;
 
+import java.awt.geom.Point2D.Float;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FilenameFilter;
@@ -187,7 +188,9 @@ public class ZCodeLoader {
 
 		log.info("load: " + node);
 		log.info("parentFile=" + node.getParentFile());
-		node.getSubmodules().clear();
+		if (!node.getSubmodules().isEmpty()) {
+			return node;
+		}
 
 		switch (node.getNodeType()) {
 
@@ -225,6 +228,10 @@ public class ZCodeLoader {
 			languageParser.loadMethodHierarchy(node);
 			break;
 		default: // do nothing
+		}
+		for (ZNode sub : node.getSubmodules()) {
+			sub.setLocation((Float) node.getLocation().clone());
+			sub.setSize(1.0f);
 		}
 		return node;
 	}

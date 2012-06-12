@@ -12,6 +12,7 @@ import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
+import javax.swing.ProgressMonitor;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,6 +24,8 @@ import com.adamldavis.z.Z.Direction;
 import com.adamldavis.z.Z.NodeLayout;
 import com.adamldavis.z.Z.SortOrder;
 import com.adamldavis.z.ZCodeSaver;
+import com.adamldavis.z.api.ProgressListener;
+import com.adamldavis.z.git.GitLogDiffsMap;
 
 @SuppressWarnings("serial")
 public class ZMenu extends JFrame {
@@ -31,6 +34,9 @@ public class ZMenu extends JFrame {
 
 	private static final Logger log = LoggerFactory.getLogger(ZMenu.class);
 
+	private ProgressMonitor mon = new ProgressMonitor(null, "Gitting...",
+			"Running git commands.", 0, 100);
+
 	public ZMenu(final Z z, final ActionListener actionListener) {
 		super("Menu");
 
@@ -38,7 +44,7 @@ public class ZMenu extends JFrame {
 		final JMenu sorting = makeSortingMenu(z, actionListener);
 		final JMenu layout = makeLayoutMenu(z, actionListener);
 		final JMenu direction = makeDirectionMenu(z, actionListener);
-		final JMenuItem up = makeItemGoUp(z, actionListener);
+		final JMenu actionMenu = makeActionMenu(z, actionListener);
 		final JMenu aboutMenu = makeAboutMenu(z, actionListener);
 		JMenuBar bar = new JMenuBar();
 
@@ -46,12 +52,53 @@ public class ZMenu extends JFrame {
 		bar.add(sorting);
 		bar.add(layout);
 		bar.add(direction);
-		bar.add(up);
+		bar.add(actionMenu);
 		bar.add(aboutMenu);
 		super.setJMenuBar(bar);
 		super.setAlwaysOnTop(true);
 		super.setSize(300, 25);
 		super.setUndecorated(true);
+	}
+
+	private JMenu makeActionMenu(Z z, ActionListener actionListener) {
+		final JMenu actions = new JMenu("Actions");
+		final JMenuItem up = makeItemGoUp(z, actionListener);
+		final JMenuItem time = makeItemTimeTravel(z, actionListener);
+		actions.add(up);
+		actions.add(time);
+		return actions;
+	}
+
+	private JMenuItem makeItemTimeTravel(final Z z,
+			final ActionListener actionListener) {
+		final JMenuItem time = new JMenuItem("Time-Travel");
+		time.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				actionListener.actionPerformed(e);
+				new Thread() {
+					@Override
+					public void run() {
+						z.getAniCount().set(0);
+						z.diffsMap = new GitLogDiffsMap(z.getSelectedNode()
+								.getParentFile());
+						z.diffsMap.runDiff(new ProgressListener() {
+							@Override
+							public void update(int progress) {
+								mon.setProgress(progress);
+							}
+						});
+						log.info("size={}", z.diffsMap.getLogSize());
+						synchronized (z.getZNodes()) {
+							z.diffsMap.removeDiffNodesFrom(z.getZNodes());
+							mon.setProgress(100);
+							z.setState(Z.State.TIME_TRAVEL);
+						}
+					}
+				}.start();
+			}
+		});
+		return time;
 	}
 
 	private JMenu makeAboutMenu(final Z z, final ActionListener listener) {

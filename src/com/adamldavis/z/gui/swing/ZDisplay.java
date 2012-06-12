@@ -16,7 +16,7 @@ import java.awt.Point;
 import java.awt.RenderingHints;
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 
 import javax.swing.JOptionPane;
@@ -30,6 +30,8 @@ import com.adamldavis.z.Z;
 import com.adamldavis.z.Z.State;
 import com.adamldavis.z.ZNode;
 import com.adamldavis.z.ZNodeLink;
+import com.adamldavis.z.git.GitUser;
+import com.adamldavis.z.gui.Painter;
 
 /**
  * @author Adam L. Davis
@@ -57,7 +59,7 @@ public class ZDisplay extends Display2d {
 	 */
 	@Override
 	protected void paintBuffered(Graphics2D g2d) {
-		final List<ZNode> zNodes = Collections.unmodifiableList(z.getZNodes());
+		final List<ZNode> zNodes = new LinkedList<ZNode>(z.getZNodes());
 		final Point point1 = z.getPoint1();
 		final Point point2 = z.getPoint2();
 
@@ -71,17 +73,18 @@ public class ZDisplay extends Display2d {
 				|| z.getState() == State.SELECTING) {
 			return;
 		}
-		final ZNodePainter nodePainter = new ZNodePainter(g2d, z.getScale(),
+		final Painter nodePainter = new ZNodePainter(g2d, z.getScale(),
 				LIGHT_GRAY);
-		final ZNodePainter hoverPainter = new ZNodePainter(g2d, z.getScale(),
+		final Painter hoverPainter = new ZNodePainter(g2d, z.getScale(),
 				Color.WHITE);
-		final ZNodePainter selNodePainter = new ZNodePainterWithLines(g2d,
+		final Painter selNodePainter = new ZNodePainterWithLines(g2d,
 				z.getScale(), YELLOW.darker());
-		final ZNodePainter taskNodePainter = new ZNodePainter(g2d,
-				z.getScale(), Color.GREEN);
+		final Painter taskNodePainter = new ZNodePainter(g2d, z.getScale(),
+				Color.GREEN);
+		final Painter userPainter = new UserPainter(g2d);
 
-		final List<ZNodeLink> links = Collections
-				.unmodifiableList(z.getLinks());
+		final List<ZNodeLink> links = new LinkedList<ZNodeLink>(z.getLinks());
+
 		for (ZNode node : zNodes) {
 			if (node == z.getSelectedNode() && links.isEmpty()) {
 				selNodePainter.paint(node);
@@ -121,8 +124,14 @@ public class ZDisplay extends Display2d {
 					.getLocation().getX(), (int) link.getNode2().getLocation()
 					.getY());
 		}
+		g2d.drawLine(0, height - 25, width, height - 25);
 		new ZTasksPainter(g2d, height - 25, 20, z.getTaskList().getActiveTask())
 				.paint(z.getTaskList());
+
+		if (z.diffsMap != null && z.getState() == State.TIME_TRAVEL)
+			for (GitUser user : z.diffsMap.getGitUsers()) {
+				userPainter.paint(user);
+			}
 	}
 
 	public Dimension getDimension() {
