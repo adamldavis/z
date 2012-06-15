@@ -199,4 +199,20 @@ public class ZNode implements Serializable {
 		return name.hashCode() * 13 + parentFile.hashCode();
 	}
 
+	Boolean hasTodo = null;
+
+	/** If the code contains the keyword TODO. */
+	public boolean hasTodo() {
+		if (hasTodo == null) {
+			hasTodo = false;
+			for (String line : this.code) {
+				if (line.contains("TODO")) {
+					hasTodo = true;
+					break;
+				}
+			}
+		}
+		return hasTodo;
+	}
+
 }

@@ -1,14 +1,42 @@
 package com.adamldavis.z.gui.swing;
 
+import static java.lang.Math.round;
+
+import java.awt.BasicStroke;
 import java.awt.Color;
+import java.awt.Font;
 import java.awt.GradientPaint;
 import java.awt.Graphics2D;
 import java.awt.Point;
 
 import com.adamldavis.z.ZNode;
+import com.adamldavis.z.ZNode.ZNodeType;
 import com.adamldavis.z.gui.Painter;
 
 public class ZNodePainter extends Graphics2DPainter implements Painter {
+
+	enum NodeStatus {
+		OK(Color.decode("0x03CA03"), 0.33199927f), FAIL(Color
+				.decode("0xFD0404"), 0.0030000098f), WARNING(Color
+				.decode("0xFD7504"), 0.07899998f), TODO(Color
+				.decode("0x029898"), 0.50317115f);
+
+		final Color color;
+		final float h;
+
+		NodeStatus(Color color, float h) {
+			this.color = color;
+			this.h = h;
+		}
+
+		public float getHue() {
+			return h;
+		}
+	}
+
+	public static Color hsv(float hue, float sat, float value) {
+		return Color.getHSBColor(hue, sat, value);
+	}
 
 	final float scale;
 
@@ -43,7 +71,17 @@ public class ZNodePainter extends Graphics2DPainter implements Painter {
 		final int isize = Math.round(size);
 		Graphics2D g2d = this.graphics2d;
 
-		g2d.setColor(g2d.getBackground());
+		// g2d.setColor(g2d.getBackground());
+		// TODO: keep track of # methods calling this method
+		float sat = halfPlusLog(node.getCodeLineSize());
+		// TODO: Use ? to get Test-coverage for value
+		float value = halfPlusLog(node.getCodeLineSize());
+		// TODO: actually keep track of error/warnings
+		final Color hsvColor = node.hasTodo() ? hsv(NodeStatus.TODO.getHue(),
+				sat, value) : hsv(NodeStatus.OK.getHue(), sat, value);
+		g2d.setColor(hsvColor);
+		g2d.setStroke(new BasicStroke(1.0f));
+
 		switch (node.getNodeType()) {
 		case CLASS:
 			g2d.fillRect(x, y, isize, isize);
@@ -81,29 +119,48 @@ public class ZNodePainter extends Graphics2DPainter implements Painter {
 			}
 			break;
 		}
+		final Font oldFont = g2d.getFont();
 		if (node.getName() != null && isize > 20) {
-			g2d.setFont(g2d.getFont().deriveFont(Math.max(size * 16 / 80, 5)));
-			g2d.drawString(node.getName(), x - 1, y + isize / 8);
+			float fontSize = Math.max(size * 16 / 80, 5);
+			g2d.setFont(oldFont.deriveFont(fontSize));
+			if (node.getNodeType() == ZNodeType.CLASS)
+				g2d.drawString(node.getName(), x - 1, y);
+			else
+				g2d.drawString(node.getName(), x - 1, y + isize / 8);
+
 		}
 		if (node.getCodeLines() != null && isize > 20) {
-			Point point2 = new Point(x + isize + 1, y + isize / 2);
-			final float codeSize = Math.max(size * 1 / 8, 5);
-			g2d.setFont(g2d.getFont().deriveFont(codeSize));
-			g2d.setPaint(new GradientPaint(node.getLocation(), color.darker(),
-					point2, Color.BLACK));
+			Point point2 = new Point(x + isize, y + isize / 2);
+			final float codeSize = Math.max(size * 1 / 12, 5);
+			g2d.setFont(new Font(Font.MONOSPACED, Font.PLAIN, round(codeSize)));
+			g2d.setPaint(new GradientPaint(x, y, hsvColor.darker(), point2.x,
+					point2.y, Color.BLACK));
+			// g2d.setColor(g2d.getBackground());
 			int i = 1;
 			for (String line : node.getCodeLines()) {
-				g2d.drawString(line.substring(0, Math.min(20, line.length())),
-						x + 5, y + isize / 8 + codeSize * i);
-				if (i++ > 3)
+				g2d.drawString(
+						line.substring(
+								0,
+								Math.min(2 * isize / round(codeSize),
+										line.length())), x + 5, y + isize / 4
+								+ codeSize * i);
+				if (line.length() > 0 && i++ > 5)
 					break;
 			}
 		}
+		g2d.setFont(oldFont);
+	}
+
+	/** Assumes value range of 0 to about 1100 (logarithmic up to 1100). */
+	private float halfPlusLog(int value) {
+		if (value <= 1) {
+			return 0.5f;
+		}
+		return Math.min(1.0f, 0.5f + (float) Math.log(value) / 14f);
 	}
 
 	protected int scale(float xy) {
 		return (int) (xy * scale) + 1;
-
 	}
 
 }

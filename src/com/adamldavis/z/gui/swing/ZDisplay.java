@@ -78,7 +78,7 @@ public class ZDisplay extends Display2d {
 		final Painter hoverPainter = new ZNodePainter(g2d, z.getScale(),
 				Color.WHITE);
 		final Painter selNodePainter = new ZNodePainterWithLines(g2d,
-				z.getScale(), YELLOW.darker());
+				z.getScale(), Color.WHITE);
 		final Painter taskNodePainter = new ZNodePainter(g2d, z.getScale(),
 				Color.GREEN);
 		final Painter userPainter = new UserPainter(g2d);
@@ -132,6 +132,9 @@ public class ZDisplay extends Display2d {
 			for (GitUser user : z.diffsMap.getGitUsers()) {
 				userPainter.paint(user);
 			}
+
+		final Painter menuPainter = new ZMenuPainter(g2d);
+		menuPainter.paint(z.getMenu());
 	}
 
 	public Dimension getDimension() {

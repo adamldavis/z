@@ -8,12 +8,11 @@ import java.awt.Dimension;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
-import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseMotionAdapter;
+import java.awt.event.MouseListener;
+import java.awt.event.MouseMotionListener;
 import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
 import java.awt.geom.Point2D;
@@ -47,8 +46,8 @@ import com.adamldavis.z.api.Editor;
 import com.adamldavis.z.editor.ZCodeEditor;
 import com.adamldavis.z.editor.ZCodeEditorPlus;
 import com.adamldavis.z.git.GitLogDiffsMap;
+import com.adamldavis.z.gui.ZMenu;
 import com.adamldavis.z.gui.swing.ZDisplay;
-import com.adamldavis.z.gui.swing.ZMenu;
 import com.adamldavis.z.tasks.ZTask;
 import com.adamldavis.z.tasks.ZTaskList;
 
@@ -58,7 +57,8 @@ import com.adamldavis.z.tasks.ZTaskList;
  * @author Adam Davis
  * 
  */
-public class Z {
+public class Z implements MouseListener, MouseWheelListener,
+		MouseMotionListener, KeyListener, Runnable {
 
 	/** what's happening right now. */
 	public enum State {
@@ -113,7 +113,13 @@ public class Z {
 				clicked(selectedNode);
 			}
 			zMenu.setVisible(false);
+			display.removeMouseMotionListener(zMenu);
+			display.removeMouseListener(zMenu);
 			saveSettings();
+			display.addMouseWheelListener(Z.this);
+			display.addMouseListener(Z.this);
+			display.addMouseMotionListener(Z.this);
+			display.addKeyListener(Z.this);
 		}
 	});
 
@@ -134,158 +140,13 @@ public class Z {
 	public GitLogDiffsMap diffsMap; // TODO make this an API
 
 	public Z() {
-		display.addMouseWheelListener(new MouseWheelListener() {
-
-			@Override
-			public void mouseWheelMoved(MouseWheelEvent e) {
-				if (e.isControlDown()) {
-					log.debug("zoom:" + e.getWheelRotation());
-					if (e.getWheelRotation() > 0 && scale > 0.125f) {
-						scale /= 2f;
-					} else if (e.getWheelRotation() < 0 && scale < 32) {
-						scale *= 2f;
-					}
-					log.debug("Scale:" + scale);
-					if (!editors.isEmpty()) {
-						for (Editor editor : editors) {
-							editor.setScale(scale);
-						}
-					}
-				}
-			}
-		});
-		display.addMouseMotionListener(new MouseMotionAdapter() {
-
-			@Override
-			public void mouseDragged(MouseEvent e) {
-				if (e.getButton() != MouseEvent.BUTTON3) {
-					point2 = e.getPoint();
-				}
-			}
-		});
-		display.addMouseListener(new MouseAdapter() {
-
-			@Override
-			public void mousePressed(MouseEvent e) {
-				log.info("pressed: " + e);
-				if (e.getButton() != MouseEvent.BUTTON3) {
-					point1 = e.getPoint();
-				}
-				ZNode z = findZNodeAt(e.getPoint());
-				if (z != null) {
-					if (e.isControlDown()) {
-						// new code editor
-						showNewEditor(z);
-					} else if (e.getButton() == MouseEvent.BUTTON1) {
-						draggedNode = z;
-					}
-				}
-			}
-
-			@Override
-			public void mouseReleased(MouseEvent e) {
-				log.info("released: " + e);
-				if (point1 != null && point2 != null) {
-					if (draggedNode == null) {
-						ZNode z = findZNodeAt(e.getPoint());
-						if (z == null) {
-							createSubNode(e.getPoint());
-						} else
-							dragged(z);
-					} else if (e.getPoint().y >= display.getHeight() - 40) {
-						final ZTask task = taskList.getTaskAt(e.getPoint().x,
-								20);
-						if (task == null) {
-							// TODO: show confirmation?
-							synchronized (zNodes) {
-								zNodes.remove(draggedNode);
-							}
-						} else
-							task.add(draggedNode);
-						draggedNode = null;
-					} else {
-						draggedNode.getLocation().setLocation(
-								translateToZNodePoint(point2));
-						updateSubLocations(draggedNode);
-						draggedNode = null;
-					}
-					point1 = point2 = null;
-				}
-			}
-
-			@Override
-			public void mouseClicked(MouseEvent e) {
-				final Point p = e.getPoint();
-				ZNode z = findZNodeAt(p);
-
-				if (z == null) {
-					zMenu.setVisible(false);
-					if (e.getButton() == MouseEvent.BUTTON3) {
-						activateMenu(e);
-					} else if (p.y >= display.getHeight() - 40) {
-						final ZTask task = taskList.getTaskAt(p.x, 20);
-						selectTask(task);
-					} else if (selectedNode == null) {
-						selectedNode = createNewZ(p, ZNodeType.MODULE);
-					} else {
-						createNewZ(p, ZNodeType.DEPENDENCY);
-					}
-				} else if (e.getButton() == MouseEvent.BUTTON1
-						&& !e.isControlDown()) {
-					clicked(z);
-				}
-			}
-		});
-		display.addMouseMotionListener(new MouseMotionAdapter() {
-			@Override
-			public void mouseMoved(MouseEvent e) {
-				final ZNode node = findZNodeAt(e.getPoint());
-				if (node == selectedNode) {
-					return;
-				}
-				if (hoveredNode != node && hoveredNode != null) {
-					hoveredNode.setSize(hoveredNode.getSize() * 1f / 1.1f);
-				}
-				if (node != null && hoveredNode != node) {
-					node.setSize(node.getSize() * 1.1f);
-				}
-				hoveredNode = node;
-				hoverText = node == null ? null : node.getName();
-				mouseLocation = e.getPoint();
-			}
-		});
-		display.addKeyListener(new KeyAdapter() {
-
-			@Override
-			public void keyReleased(KeyEvent e) {
-				links.clear();
-			}
-
-			@Override
-			public void keyPressed(KeyEvent e) {
-				if (!links.isEmpty())
-					return;
-				switch (e.getKeyChar()) {
-				case 'm':
-					if (selectedNode.getNodeType() == ZNodeType.CLASS) {
-						addMethodLinks();
-					}
-					break;
-				case 'p':
-					// TODO: add polymorphic links
-				case 'i':
-				case 'r':
-					// TODO: add import/require links
-				case 'h':
-				case 'f':
-					addFieldLinks();
-				}
-			}
-		});
+		display.addMouseWheelListener(this);
+		display.addMouseListener(this);
+		display.addMouseMotionListener(this);
+		display.addKeyListener(this);
 		zfactory = new ZFactory(Z.class.getResourceAsStream("z.properties"));
 		loadSettings();
 		timer.schedule(new TimerTask() {
-
 			@Override
 			public void run() {
 				Z.this.run();
@@ -293,14 +154,156 @@ public class Z {
 		}, 33, 33);
 	}
 
+	@Override
+	public void mouseWheelMoved(MouseWheelEvent e) {
+		if (e.isControlDown()) {
+			log.debug("zoom:" + e.getWheelRotation());
+			if (e.getWheelRotation() > 0 && scale > 0.125f) {
+				scale /= 2f;
+			} else if (e.getWheelRotation() < 0 && scale < 32) {
+				scale *= 2f;
+			}
+			log.debug("Scale:" + scale);
+			if (!editors.isEmpty()) {
+				for (Editor editor : editors) {
+					editor.setScale(scale);
+				}
+			}
+		}
+	}
+
+	@Override
+	public void mouseDragged(MouseEvent e) {
+		if (e.getButton() != MouseEvent.BUTTON3) {
+			point2 = e.getPoint();
+		}
+	}
+
+	@Override
+	public void mousePressed(MouseEvent e) {
+		log.info("pressed: " + e);
+		if (e.getButton() != MouseEvent.BUTTON3) {
+			point1 = e.getPoint();
+		}
+		ZNode z = findZNodeAt(e.getPoint());
+		if (z != null) {
+			if (e.isControlDown()) {
+				// new code editor
+				showNewEditor(z);
+			} else if (e.getButton() == MouseEvent.BUTTON1) {
+				draggedNode = z;
+			}
+		}
+	}
+
+	@Override
+	public void mouseReleased(MouseEvent e) {
+		log.info("released: " + e);
+		if (point1 != null && point2 != null) {
+			if (draggedNode == null) {
+				ZNode z = findZNodeAt(e.getPoint());
+				if (z == null) {
+					createSubNode(e.getPoint());
+				} else
+					dragged(z);
+			} else if (e.getPoint().y >= display.getHeight() - 40) {
+				final ZTask task = taskList.getTaskAt(e.getPoint().x, 20);
+				if (task == null) {
+					// TODO: show confirmation?
+					synchronized (zNodes) {
+						zNodes.remove(draggedNode);
+					}
+				} else
+					task.add(draggedNode);
+				draggedNode = null;
+			} else {
+				draggedNode.getLocation().setLocation(
+						translateToZNodePoint(point2));
+				updateSubLocations(draggedNode);
+				draggedNode = null;
+			}
+			point1 = point2 = null;
+		}
+	}
+
+	@Override
+	public void mouseClicked(MouseEvent e) {
+		final Point p = e.getPoint();
+		ZNode z = findZNodeAt(p);
+
+		if (z == null) {
+			zMenu.setVisible(false);
+			if (e.getButton() == MouseEvent.BUTTON3) {
+				activateMenu(e);
+			} else if (p.y >= display.getHeight() - 40) {
+				final ZTask task = taskList.getTaskAt(p.x, 20);
+				selectTask(task);
+			} else if (selectedNode == null) {
+				selectedNode = createNewZ(p, ZNodeType.MODULE);
+			} else {
+				createNewZ(p, ZNodeType.DEPENDENCY);
+			}
+		} else if (e.getButton() == MouseEvent.BUTTON1 && !e.isControlDown()) {
+			clicked(z);
+		}
+	}
+
+	@Override
+	public void mouseMoved(MouseEvent e) {
+		final ZNode node = findZNodeAt(e.getPoint());
+		if (node == selectedNode) {
+			return;
+		}
+		if (hoveredNode != node && hoveredNode != null) {
+			hoveredNode.setSize(hoveredNode.getSize() * 1f / 1.1f);
+		}
+		if (node != null && hoveredNode != node) {
+			node.setSize(node.getSize() * 1.1f);
+		}
+		hoveredNode = node;
+		hoverText = node == null ? null : node.getName();
+		mouseLocation = e.getPoint();
+	}
+
+	@Override
+	public void keyReleased(KeyEvent e) {
+		links.clear();
+	}
+
+	@Override
+	public void keyPressed(KeyEvent e) {
+		if (!links.isEmpty())
+			return;
+		switch (e.getKeyChar()) {
+		case 'm':
+			if (selectedNode.getNodeType() == ZNodeType.CLASS) {
+				addMethodLinks();
+			}
+			break;
+		case 'p':
+			// TODO: add polymorphic links
+		case 'i':
+		case 'r':
+			// TODO: add import/require links
+		case 'h':
+		case 'f':
+			addFieldLinks();
+		}
+	}
+
 	protected void activateMenu(MouseEvent e) {
-		zMenu.setLocation(e.getLocationOnScreen());
+		display.removeMouseWheelListener(Z.this);
+		display.removeMouseListener(Z.this);
+		display.removeMouseMotionListener(Z.this);
+		display.removeKeyListener(Z.this);
+		zMenu.setLocation(e.getPoint());
+		display.addMouseListener(zMenu);
+		display.addMouseMotionListener(zMenu);
 		SwingUtilities.invokeLater(new Runnable() {
 
 			@Override
 			public void run() {
 				zMenu.setVisible(true);
-				zMenu.requestFocus();
 			}
 		});
 	}
@@ -449,6 +452,7 @@ public class Z {
 
 	public ZFactory zfactory;
 
+	@Override
 	public void run() {
 		if ((state == State.ANIMATING && aniCount.incrementAndGet() >= 100)
 				|| (state == State.TIME_TRAVEL && aniCount.addAndGet(1) >= 999)
@@ -901,6 +905,25 @@ public class Z {
 
 	public void setState(State state) {
 		this.state = state;
+	}
+
+	public ZMenu getMenu() {
+		return this.zMenu;
+	}
+
+	@Override
+	public void keyTyped(KeyEvent e) {
+		// TODO Auto-generated method stub
+	}
+
+	@Override
+	public void mouseEntered(MouseEvent e) {
+		// TODO Auto-generated method stub
+	}
+
+	@Override
+	public void mouseExited(MouseEvent e) {
+		// TODO Auto-generated method stub
 	}
 
 }
