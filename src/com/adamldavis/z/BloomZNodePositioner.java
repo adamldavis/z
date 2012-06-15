@@ -28,8 +28,8 @@ public class BloomZNodePositioner extends AbstractZNodePositioner {
 
 	// two rings 0 = outside, 1 = inside
 	private Point2D getXPoint(final double angle, int ring) {
-		float x = (float) (Math.cos(angle) * (0.8 - ring * 0.4));
-		float y = (float) (Math.sin(angle) * (0.8 - ring * 0.4));
+		float x = (float) (Math.cos(angle) * (0.8 - ring * 0.33));
+		float y = (float) (Math.sin(angle) * (0.8 - ring * 0.33));
 
 		return new Point2D.Float(x, y);
 	}
