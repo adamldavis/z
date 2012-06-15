@@ -95,7 +95,7 @@ public class MavenDependencyManager implements DependencyManager {
 						name.append(nestName).append('.');
 					}
 					name.append(child.getNodeName());
-					builder.append(name).append('=')
+					builder.append(name).append(": ")
 							.append(child.getTextContent()).append('\n');
 				} else {
 					List<String> list = new LinkedList<String>(nest);
@@ -327,7 +327,7 @@ public class MavenDependencyManager implements DependencyManager {
 		if (line.indexOf('=') < 0) {
 			return;
 		}
-		String key = line.substring(0, line.indexOf('='));
+		String key = line.substring(0, line.indexOf(": "));
 
 		if (key.contains(".")) {
 			Node parent = node;
@@ -338,12 +338,12 @@ public class MavenDependencyManager implements DependencyManager {
 				} else
 					parent = getNode(name, parent);
 			}
-			parent.setTextContent(line.substring(line.indexOf('=') + 1));
+			parent.setTextContent(line.substring(line.indexOf(": ") + 2));
 		} else {
 			final Node child = getNode(key, node) == null ? doc
 					.createElement(key) : getNode(key, node);
 
-			child.setTextContent(line.substring(line.indexOf('=') + 1));
+			child.setTextContent(line.substring(line.indexOf(": ") + 2));
 			node.appendChild(child);
 		}
 	}
