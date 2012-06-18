@@ -200,7 +200,8 @@ public class ZNode implements Serializable {
 
 	@Override
 	public int hashCode() {
-		return name.hashCode() * 13 + parentFile.hashCode();
+		return (name == null ? 0 : name.hashCode() * 13)
+				+ (parentFile == null ? 0 : parentFile.hashCode());
 	}
 
 	Boolean hasTodo = null;
