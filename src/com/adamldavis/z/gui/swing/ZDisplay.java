@@ -1,11 +1,6 @@
 /** Copyright 2012, Adam L. Davis, all rights reserved. */
 package com.adamldavis.z.gui.swing;
 
-import static java.awt.Color.BLACK;
-import static java.awt.Color.LIGHT_GRAY;
-import static java.awt.Color.WHITE;
-import static java.awt.Color.YELLOW;
-
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -31,6 +26,8 @@ import com.adamldavis.z.Z.State;
 import com.adamldavis.z.ZNode;
 import com.adamldavis.z.ZNodeLink;
 import com.adamldavis.z.git.GitUser;
+import com.adamldavis.z.gui.ColorManager;
+import com.adamldavis.z.gui.ColorSetting;
 import com.adamldavis.z.gui.Painter;
 
 /**
@@ -44,11 +41,14 @@ public class ZDisplay extends Display2d {
 
 	Z z;
 
+	ColorManager colorManager = new ColorManager();
+
 	public ZDisplay(Z z) {
 		super(false, 2, 35, new Dimension(800, 600));
 		setTitle("Z");
 		this.z = z;
-		this.getContentPane().setBackground(Color.BLACK.brighter());
+		this.getContentPane().setBackground(
+				colorManager.getColorFor(ColorSetting.BACKGROUND));
 		this.getContentPane().setLayout(new FlowLayout(FlowLayout.LEFT));
 	}
 
@@ -66,21 +66,23 @@ public class ZDisplay extends Display2d {
 		g2d.addRenderingHints(new RenderingHints(
 				RenderingHints.KEY_ANTIALIASING,
 				RenderingHints.VALUE_ANTIALIAS_ON));
-		g2d.setBackground(BLACK);
+		g2d.setBackground(colorManager.getColorFor(ColorSetting.BACKGROUND));
 		g2d.setColor(g2d.getBackground());
 		// g2d.fillRect(0, 0, width, height);
 		if (zNodes == null || z.getState() == State.EDITING
 				|| z.getState() == State.SELECTING) {
 			return;
 		}
+		Color lineColor = colorManager.getColorFor(ColorSetting.LINE);
 		final Painter nodePainter = new ZNodePainter(g2d, z.getScale(),
-				LIGHT_GRAY);
+				lineColor);
+		Color hoverColor = colorManager.getColorFor(ColorSetting.HOVER);
 		final Painter hoverPainter = new ZNodePainter(g2d, z.getScale(),
-				Color.WHITE);
+				hoverColor);
 		final Painter selNodePainter = new ZNodePainterWithLines(g2d,
-				z.getScale(), Color.WHITE);
+				z.getScale(), lineColor);
 		final Painter taskNodePainter = new ZNodePainter(g2d, z.getScale(),
-				Color.GREEN);
+				colorManager.getColorFor(ColorSetting.SELECTED_TASK));
 		final Painter userPainter = new UserPainter(g2d);
 
 		final List<ZNodeLink> links = new LinkedList<ZNodeLink>(z.getLinks());
@@ -98,7 +100,7 @@ public class ZDisplay extends Display2d {
 			}
 		}
 		if (point1 != null && point2 != null) {
-			g2d.setColor(YELLOW.darker());
+			g2d.setColor(lineColor);
 			drawLine(g2d, point1.x, point1.y, point2.x, point2.y);
 			final int s = (int) z.getScale() * 80;
 			g2d.drawOval(point2.x - s / 2, point2.y - s / 2, s, s);
@@ -107,23 +109,23 @@ public class ZDisplay extends Display2d {
 		if (z.getHoverText() != null) {
 			final Point point = z.getMouseLocation();
 			final int length = z.getHoverText().length();
-			g2d.setColor(WHITE);
+			g2d.setColor(hoverColor);
 			g2d.drawString(z.getHoverText(), point.x
 					- (length * 10 * point.x / width), point.y);
 		}
-		g2d.setColor(LIGHT_GRAY);
-		g2d.drawRect(8, 30, 42, 20);
-		g2d.drawString("Back", 8, 45);
+		// g2d.setColor(colorManager.getColorFor(ColorSetting.LINE));
+		// g2d.drawRect(8, 30, 42, 20);
+		// g2d.drawString("Back", 8, 45);
 		g2d.setStroke(new BasicStroke(2.0f));
 		for (ZNodeLink link : links) {
 			g2d.setPaint(new GradientPaint(link.getNode1().getLocation(),
-					YELLOW.darker(), link.getNode2().getLocation(), Color.BLUE
-							.darker()));
+					hoverColor, link.getNode2().getLocation(), lineColor));
 			g2d.drawLine((int) link.getNode1().getLocation().getX(), (int) link
 					.getNode1().getLocation().getY(), (int) link.getNode2()
 					.getLocation().getX(), (int) link.getNode2().getLocation()
 					.getY());
 		}
+		g2d.setColor(lineColor);
 		g2d.drawLine(0, height - 25, width, height - 25);
 		new ZTasksPainter(g2d, height - 25, 20, z.getTaskList().getActiveTask())
 				.paint(z.getTaskList());

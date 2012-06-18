@@ -4,7 +4,7 @@
     <name>Zeta Code</name>
     <artifactId>z</artifactId>
     <groupId>com.adamldavis</groupId>
-    <version>0.1-beta-3</version>
+    <version>0.2-beta-1</version>
     <url>http://adamldavis.com</url>
     <modelVersion>4.0.0</modelVersion>
     <organization>
@@ -132,6 +132,11 @@
             <artifactId>junit</artifactId>
             <version>4.10</version>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+        	<groupId>org.yaml</groupId>
+        	<artifactId>snakeyaml</artifactId>
+        	<version>1.8</version>
         </dependency>
     </dependencies>
 </project>

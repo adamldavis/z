@@ -26,6 +26,10 @@ public class ZNode implements Serializable {
 		MODULE, PACKAGE, CLASS, METHOD, DEPENDENCY, CALLEE, CALLER
 	};
 
+	public enum NodeStatus {
+		OKAY, FAIL, WARNING, TODO;
+	}
+
 	private Point2D.Float location;
 	private float size = 80f; // size in 1:1 pixels
 	private ZNodeType nodeType = ZNodeType.MODULE;

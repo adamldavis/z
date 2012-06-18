@@ -11,28 +11,11 @@ import java.awt.Point;
 
 import com.adamldavis.z.ZNode;
 import com.adamldavis.z.ZNode.ZNodeType;
+import com.adamldavis.z.gui.ColorManager;
+import com.adamldavis.z.gui.ColorSetting;
 import com.adamldavis.z.gui.Painter;
 
 public class ZNodePainter extends Graphics2DPainter implements Painter {
-
-	enum NodeStatus {
-		OK(Color.decode("0x03CA03"), 0.33199927f), FAIL(Color
-				.decode("0xFD0404"), 0.0030000098f), WARNING(Color
-				.decode("0xFD7504"), 0.07899998f), TODO(Color
-				.decode("0x029898"), 0.50317115f);
-
-		final Color color;
-		final float h;
-
-		NodeStatus(Color color, float h) {
-			this.color = color;
-			this.h = h;
-		}
-
-		public float getHue() {
-			return h;
-		}
-	}
 
 	public static Color hsv(float hue, float sat, float value) {
 		return Color.getHSBColor(hue, sat, value);
@@ -41,6 +24,8 @@ public class ZNodePainter extends Graphics2DPainter implements Painter {
 	final float scale;
 
 	final Color color;
+
+	ColorManager colorManager = new ColorManager();
 
 	public ZNodePainter(Graphics2D graphics2d, float scale, Color color) {
 		super(graphics2d);
@@ -77,8 +62,11 @@ public class ZNodePainter extends Graphics2DPainter implements Painter {
 		// TODO: Use ? to get Test-coverage for value
 		float value = halfPlusLog(node.getCodeLineSize());
 		// TODO: actually keep track of error/warnings
-		final Color hsvColor = node.hasTodo() ? hsv(NodeStatus.TODO.getHue(),
-				sat, value) : hsv(NodeStatus.OK.getHue(), sat, value);
+		final Color todoColor = colorManager.getColorFor(ColorSetting.TODO);
+		final Color okayColor = colorManager.getColorFor(ColorSetting.OKAY);
+		final Color hsvColor = node.hasTodo() ? hsv(
+				ColorUtil.findHue(todoColor), sat, value) : hsv(
+				ColorUtil.findHue(okayColor), sat, value);
 		g2d.setColor(hsvColor);
 		g2d.setStroke(new BasicStroke(1.0f));
 
@@ -123,7 +111,8 @@ public class ZNodePainter extends Graphics2DPainter implements Painter {
 		if (node.getName() != null && isize > 20) {
 			float fontSize = Math.max(size * 16 / 80, 5);
 			g2d.setFont(oldFont.deriveFont(fontSize));
-			if (node.getNodeType() == ZNodeType.CLASS)
+			if (node.getNodeType() == ZNodeType.CLASS
+					|| node.getNodeType() == ZNodeType.MODULE)
 				g2d.drawString(node.getName(), x - 1, y);
 			else
 				g2d.drawString(node.getName(), x - 1, y + isize / 8);

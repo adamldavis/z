@@ -6,6 +6,8 @@ import java.awt.Color;
 import java.awt.Graphics2D;
 
 import com.adamldavis.z.ZNode;
+import com.adamldavis.z.gui.ColorManager;
+import com.adamldavis.z.gui.ColorSetting;
 
 /**
  * @author Adam L. Davis
@@ -26,18 +28,22 @@ public class ZNodePainterWithLines extends ZNodePainter {
 		super.paint(object);
 	}
 
+	ColorManager colorManager = new ColorManager();
+
 	void drawLines(ZNode node, Graphics2D g2d) {
 		for (ZNode dep : node.getDependencies()) {
-			g2d.setColor(Color.WHITE);
+			g2d.setColor(colorManager.getColorFor(ColorSetting.LINE));
 			g2d.setStroke(new BasicStroke(1f));
-			g2d.drawLine(scale(node.getLocation().x), scale(node.getLocation().y),
-					scale(dep.getLocation().x), scale(dep.getLocation().y));
+			g2d.drawLine(scale(node.getLocation().x),
+					scale(node.getLocation().y), scale(dep.getLocation().x),
+					scale(dep.getLocation().y));
 		}
 		for (ZNode sub : node.getSubmodules()) {
-			g2d.setColor(Color.blue);
+			g2d.setColor(colorManager.getColorFor(ColorSetting.LINE));
 			g2d.setStroke(new BasicStroke(2f));
-			g2d.drawLine(scale(node.getLocation().x), scale(node.getLocation().y),
-					scale(sub.getLocation().x), scale(sub.getLocation().y));
+			g2d.drawLine(scale(node.getLocation().x),
+					scale(node.getLocation().y), scale(sub.getLocation().x),
+					scale(sub.getLocation().y));
 		}
 	}
 
