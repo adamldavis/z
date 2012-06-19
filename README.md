@@ -1,7 +1,8 @@
 Zeta Code
 ========================
 
-Go from a 10,000 ft view of the entire project down to any file simply by zooming.
+Go from a 10,000 ft view of the entire project down to any file simply by zooming. Zeta Code is a [ZUI](https://en.wikipedia.org/wiki/Zooming_User_Interface) for programmers.
+![https://p.twimg.com/AvwpduGCIAAC0Qa.png:large](https://p.twimg.com/AvwpduGCIAAC0Qa.png:large)
 
 Languages/Frameworks Supported: Java/Maven, Ruby/Gems
 
