@@ -1,12 +1,5 @@
 package neoe.ne;
 
-import static java.awt.Color.BLACK;
-import static java.awt.Color.BLUE;
-import static java.awt.Color.GREEN;
-import static java.awt.Color.LIGHT_GRAY;
-import static java.awt.Color.RED;
-import static java.awt.Color.YELLOW;
-
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
@@ -23,7 +16,11 @@ import java.util.List;
 
 import javax.swing.JOptionPane;
 
-import neoe.ne.U.RoSb;
+import neoe.util.ReadOnlyStrBuffer;
+
+
+import com.adamldavis.z.gui.ColorManager;
+import com.adamldavis.z.gui.ColorSetting;
 
 public class PlainPage {
 	class Cursor {
@@ -96,7 +93,7 @@ public class PlainPage {
 		}
 
 		void moveLeftWord() {
-			RoSb line = roLines.getline(cy);
+			ReadOnlyStrBuffer line = roLines.getline(cy);
 			cx = Math.max(0, cx - 1);
 			char ch1 = line.charAt(cx);
 			while (cx > 0 && U.isSkipChar(line.charAt(cx), ch1)) {
@@ -144,7 +141,7 @@ public class PlainPage {
 		}
 
 		void moveRightWord() {
-			RoSb line = roLines.getline(cy);
+			ReadOnlyStrBuffer line = roLines.getline(cy);
 			cx = Math.min(line.length(), cx + 1);
 			if (cx < line.length()) {
 				char ch1 = line.charAt(cx);
@@ -237,7 +234,7 @@ public class PlainPage {
 				if (ptSelection.isSelected()) {
 					ptEdit.deleteRect(ptSelection.getSelectRect());
 				}
-				RoSb sb = roLines.getline(cy);
+				ReadOnlyStrBuffer sb = roLines.getline(cy);
 				String indent = U.getIndent(sb.toString());
 				String s = sb.substring(cx, sb.length());
 				editRec.insertEmptyLine(cy + 1);
@@ -437,7 +434,7 @@ public class PlainPage {
 			for (int y = 0; y < lines.size(); y++) {
 				if (lines.get(y).length() * 2 > lineLen) {
 					int len = 0;
-					RoSb sb = roLines.getline(y);
+					ReadOnlyStrBuffer sb = roLines.getline(y);
 					int start = 0;
 					for (int i = 0; i < sb.length(); i++) {
 						len += (sb.charAt(i) > 255) ? 2 : 1;
@@ -468,7 +465,7 @@ public class PlainPage {
 		class Comment {
 			void markBox(Graphics2D g2, int x, int y) {
 				if (y >= sy && y <= sy + showLineCnt && x >= sx) {
-					RoSb sb = roLines.getline(y);
+					ReadOnlyStrBuffer sb = roLines.getline(y);
 					int w1 = x > 0 ? U.strWidth(g2, sb.substring(sx, x),
 							TABWIDTH) : 0;
 					String c = sb.substring(x, x + 1);
@@ -540,21 +537,7 @@ public class PlainPage {
 		boolean closed = false;
 		Color colorBg, colorComment, colorComment2, colorCurrentLineBg,
 				colorDigit, colorGutLine, colorGutNumber, colorKeyword;
-		int colorMode;
-		/**
-		 * 0:white mode 1: black mode 2: blue mode * 1 bg, 2 normal, 3 keyword,
-		 * 4 digit, 5 comment, 6 gutNumber, 7 gutLine, 8 currentLineBg, 9
-		 * comment2
-		 */
-		final int[][] ColorModes = new int[][] {
-				{ 0xdddddd, BLACK.getRGB(), BLUE.getRGB(), RED.getRGB(),
-						0xC85032, 0x115511, 0xffffff, 0xF0F0F0, 0xffffff },
-				{ 0x0, LIGHT_GRAY.getRGB(), YELLOW.darker().getRGB(),
-						GREEN.getRGB(), BLUE.brighter().getRGB(), 0xC85032,
-						LIGHT_GRAY.getRGB(), 0x222222, 0x404040 },
-				{ BLUE.darker().getRGB(), LIGHT_GRAY.getRGB(), YELLOW.getRGB(),
-						GREEN.getRGB(), RED.getRGB(), 0x008800,
-						LIGHT_GRAY.getRGB(), 0x2222ff, 0x0 } };
+		ColorManager colorMode;
 		Color colorNormal = Color.BLACK;
 		String comment = null;
 		Comment commentor = new Comment();
@@ -573,23 +556,21 @@ public class PlainPage {
 		boolean showLineNumbers = true;
 
 		Paint() {
-			applyColorMode(0);
+			applyColorMode(new ColorManager());
 		}
 
-		void applyColorMode(int i) {
-			if (i >= ColorModes.length)
-				i = 0;
-			colorMode = i;
-			int[] cm = ColorModes[i];
-			colorBg = new Color(cm[0]);
-			colorNormal = new Color(cm[1]);
-			colorKeyword = new Color(cm[2]);
-			colorDigit = new Color(cm[3]);
-			colorComment = new Color(cm[4]);
-			colorGutNumber = new Color(cm[5]);
-			colorGutLine = new Color(cm[6]);
-			colorCurrentLineBg = new Color(cm[7]);
-			colorComment2 = new Color(cm[8]);
+		void applyColorMode(ColorManager cm) {
+			colorMode = cm;
+			colorBg = cm.getColorFor(ColorSetting.BACKGROUND);
+			colorNormal = cm.getColorFor(ColorSetting.TEXT);
+			colorKeyword = cm.getColorFor(ColorSetting.SELECTED_TASK);
+			colorDigit = cm.getColorFor(ColorSetting.LINE);
+			colorComment = cm.getColorFor(ColorSetting.TODO);
+			colorGutNumber = cm.getColorFor(ColorSetting.TASK);
+			colorGutLine = cm.getColorFor(ColorSetting.BACKGROUND);
+			colorCurrentLineBg = cm.getColorFor(ColorSetting.BACKGROUND)
+					.brighter();
+			colorComment2 = cm.getColorFor(ColorSetting.TODO).darker().darker(); // shadow
 		}
 
 		void drawGutter(Graphics2D g2) {
@@ -705,7 +686,7 @@ public class PlainPage {
 				if (y >= roLines.getLinesize()) {
 					break;
 				}
-				RoSb sb = roLines.getline(y);
+				ReadOnlyStrBuffer sb = roLines.getline(y);
 				if (sx < sb.length()) {
 					int chari2 = Math.min(charCntInLine + sx, sb.length());
 					String s = U.subs(sb, sx, chari2);
@@ -756,8 +737,7 @@ public class PlainPage {
 		}
 
 		void setNextColorMode() {
-			if (++colorMode >= ColorModes.length)
-				colorMode = 0;
+			// TODO: implement this?
 		}
 
 		void xpaint(Graphics g, Dimension size) {
@@ -820,7 +800,7 @@ public class PlainPage {
 					if (cy >= roLines.getLinesize()) {
 						cy = roLines.getLinesize() - 1;
 					}
-					RoSb sb = roLines.getline(cy);
+					ReadOnlyStrBuffer sb = roLines.getline(cy);
 					sx = Math.min(sx, sb.length());
 					cx = sx
 							+ U.computeShowIndex(sb.substring(sx), mx, g2,
@@ -1012,7 +992,7 @@ public class PlainPage {
 			}
 		}
 
-		void mouseSelection(RoSb sb) {
+		void mouseSelection(ReadOnlyStrBuffer sb) {
 			if (mcount == 2) {
 				int x1 = cx;
 				int x2 = cx;
@@ -1075,11 +1055,11 @@ public class PlainPage {
 
 	int cx;
 	int cy;
-	U.BasicEdit editNoRec = new U.BasicEdit(false, this);
-	U.BasicEdit editRec = new U.BasicEdit(true, this);
+	BasicEdit editNoRec = new BasicEdit(false, this);
+	BasicEdit editRec = new BasicEdit(true, this);
 	String encoding;
 	public String fn;
-	U.History history;
+	History history;
 	boolean ignoreCase = true;
 	boolean isCommentChecked = false;
 	List<StringBuffer> lines;
@@ -1090,10 +1070,10 @@ public class PlainPage {
 	boolean mshift;
 	int mx, my;
 	EasyEdit ptEdit = new EasyEdit();
-	U.FindAndReplace ptFind = new U.FindAndReplace(this);
+	FindAndReplace ptFind = new FindAndReplace(this);
 	Selection ptSelection = new Selection();
 	boolean rectSelectMode = false;
-	U.ReadonlyLines roLines = new U.ReadonlyLines(this);
+	ReadonlyLines roLines = new ReadonlyLines(this);
 	boolean saveSelectionCancel;
 	int selectstartx, selectstarty, selectstopx, selectstopy;
 	int showLineCnt;
@@ -1108,7 +1088,7 @@ public class PlainPage {
 		this.uiComp = editor;
 		this.fn = f.getAbsolutePath();
 		this.workPath = f.getParent();
-		history = new U.History(this);
+		history = new History(this);
 		U.readFile(this, f.getAbsolutePath());
 
 	}
@@ -1116,7 +1096,7 @@ public class PlainPage {
 	public PlainPage(EditPanel editor, String text) throws Exception {
 		ui = new Paint();
 		this.uiComp = editor;
-		history = new U.History(this);
+		history = new History(this);
 		ptEdit.setText(text);
 	}
 
@@ -1259,7 +1239,7 @@ public class PlainPage {
 				} else if (kc == KeyEvent.VK_H) {
 					U.openFileHistory();
 				} else if (kc == KeyEvent.VK_P) {
-					new U.Print(PlainPage.this).printPages();
+					new Print(PlainPage.this).printPages();
 				} else if (kc == KeyEvent.VK_ENTER) {
 					cursor.moveEnd();
 					focusCursor();

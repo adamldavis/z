@@ -15,7 +15,6 @@ import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JTextField;
 
-import neoe.ne.U.SimpleLayout;
 
 public class FindReplaceWindow implements ActionListener, KeyListener {
 

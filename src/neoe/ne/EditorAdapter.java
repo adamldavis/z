@@ -22,8 +22,8 @@ import neoe.ne.PlainPage.Paint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.adamldavis.z.api.ColorMode;
 import com.adamldavis.z.api.Editor;
+import com.adamldavis.z.gui.ColorManager;
 
 /**
  * Adapter for the neo-edit code editor.
@@ -48,14 +48,14 @@ public class EditorAdapter implements Editor, MouseListener,
 	public EditorAdapter() {
 		try {
 			panel.setBorder(new MatteBorder(EDGE_SIZE, EDGE_SIZE, EDGE_SIZE,
-					EDGE_SIZE, Color.WHITE));
+					EDGE_SIZE, Color.GRAY));
 			editor = new BetterEditPanel("");
 			panel.add(editor);
 			panel.addMouseListener(this);
 			panel.addMouseMotionListener(this);
 			editor.addKeyListener(this);
 		} catch (Exception e) {
-			log.error(e.getMessage());
+			log.error(e.getMessage(), e);
 		}
 	}
 
@@ -79,18 +79,9 @@ public class EditorAdapter implements Editor, MouseListener,
 	 * )
 	 */
 	@Override
-	public void applyColorMode(ColorMode mode) {
+	public void applyColor(ColorManager colorManager) {
 		final Paint ui = editor.page.ui;
-		switch (mode) {
-		case BLUE:
-			ui.applyColorMode(2);
-			break;
-		case BLACK:
-			ui.applyColorMode(1);
-			break;
-		default:
-			ui.applyColorMode(0);
-		}
+		ui.applyColorMode(colorManager);
 	}
 
 	public void setShowNumbers(boolean show) {
