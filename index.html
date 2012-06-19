@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset='utf-8' />
+    <meta http-equiv="X-UA-Compatible" content="chrome=1" />
+    <meta name="description" content="Z (Zeta Code) : Experimental IDE visualizing code as a graph" />
+
+    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+
+    <title>Z (Zeta Code)</title>
+  </head>
+
+  <body>
+
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/adamd/z">View on GitHub</a>
+
+          <h1 id="project_title">Z (Zeta Code)</h1>
+          <h2 id="project_tagline">Experimental IDE visualizing code as a graph</h2>
+
+            <section id="downloads">
+              <a class="zip_download_link" href="https://github.com/adamd/z/zipball/master">Download this project as a .zip file</a>
+              <a class="tar_download_link" href="https://github.com/adamd/z/tarball/master">Download this project as a tar.gz file</a>
+            </section>
+        </header>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+        <h1>Zeta Code</h1>
+
+<p>Go from a 10,000 ft view of the entire project down to any file simply by zooming. Zeta Code is a <a href="https://en.wikipedia.org/wiki/Zooming_User_Interface">ZUI</a> for programmers.
+<img src="https://p.twimg.com/AvwpduGCIAAC0Qa.png:large" alt="https://p.twimg.com/AvwpduGCIAAC0Qa.png:large"></p>
+
+<p>Languages/Frameworks Supported: Java/Maven, Ruby/Gems</p>
+
+<ul>
+<li>Java/Maven: Tested on itself</li>
+<li>Ruby/Gems: Tested on the Rails project</li>
+</ul><h2>Features</h2>
+
+<ul>
+<li>right-click anywhere to get the menu</li>
+<li>click on a node to select it.</li>
+<li>ctrl-click on a node to open an editor for it.</li>
+<li>Three different ways of organizing nodes: Bloom, Grid, random</li>
+<li>Choose any directionality: left-right, down, up, right-left</li>
+<li>Time-Travel: gource-like animation of commit history (git)</li>
+<li>Neo-Edit Editor with syntax highlighting and many other features</li>
+<li>Press F6 in editor for runtime-debugging</li>
+</ul><h2>Future Plans</h2>
+
+<ul>
+<li>Support for more languages and frameworks</li>
+<li>Zoom-in/out using the mouse-wheel</li>
+<li>Tasks/Working-sets: ability to save a group of files and return to them at any time.</li>
+<li>Dependencies: Easily manage your dependencies. See which code is using what, and easily search for existing open-source software.</li>
+<li>History: Forward/Backward history.</li>
+<li>Testing: Integration with modern testing frameworks like JUnit, TestNG, and spock.</li>
+<li>Plugins: for version-control, compiling, testing, etc. It will be fully extensible.</li>
+<li>Docs: ability to quickly see code-documentation by hovering, etc.</li>
+<li>Call-heirarchy: see the methods called by current method.</li>
+<li>Refactoring: ability to rename methods, move methods, etc.</li>
+<li>Preview: show real values in real-time ("coding without blinders")</li>
+</ul><h2>Usage</h2>
+
+<p>First you need to compile using Maven.</p>
+
+<pre><code>mvn package
+</code></pre>
+
+<p>Unzip the zip-with-lib, then you can just run the resulting jar:</p>
+
+<pre><code>cd target/
+unzip z-0.1-beta-3-zip-with-lib.zip
+java -jar z-0.1-beta-3/z-0.1-beta-3.jar
+</code></pre>
+
+<h2>Known Issues</h2>
+
+<p>This code is still in beta, so use with caution. It is not done.</p>
+
+<h2>License</h2>
+
+<p>Copyright 2012, Adam L. Davis. All rights reserved.
+Made Available for use under a BSD-style license. See LICENSE</p>
+      </section>
+    </div>
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">Z (Zeta Code) maintained by <a href="https://github.com/adamd">adamd</a></p>
+        <p>Published with <a href="http://pages.github.com">GitHub Pages</a></p>
+      </footer>
+    </div>
+
+              <script type="text/javascript">
+            var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+            document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+          </script>
+          <script type="text/javascript">
+            try {
+              var pageTracker = _gat._getTracker("UA-31160589-1");
+            pageTracker._trackPageview();
+            } catch(err) {}
+          </script>
+
+
+  </body>
+</html>
