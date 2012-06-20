@@ -4,42 +4,21 @@ package com.adamldavis.z.git;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 
 import neoe.ne.PicView;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 
+import com.adamldavis.z.util.HashUtil;
+
 /**
  * @author Adam L. Davis
  * 
  */
 public class GravatarUtil {
-
-	public static String hex(byte[] array) {
-		StringBuffer sb = new StringBuffer();
-		for (int i = 0; i < array.length; ++i) {
-			sb.append(Integer.toHexString((array[i] & 0xFF) | 0x100).substring(
-					1, 3));
-		}
-		return sb.toString();
-	}
-
-	public static String md5Hex(String message) {
-		try {
-			MessageDigest md = MessageDigest.getInstance("MD5");
-			return hex(md.digest(message.getBytes("CP1252")));
-		} catch (NoSuchAlgorithmException e) {
-			throw new RuntimeException(e);
-		} catch (UnsupportedEncodingException e) {
-			throw new RuntimeException(e);
-		}
-	}
 
 	/** Uses default values of 64 for size and "retro" for deflt. */
 	public static String getGravatarUrl(String email) {
@@ -59,8 +38,8 @@ public class GravatarUtil {
 	 * @return Just a String URL for the image to get.
 	 */
 	public static String getGravatarUrl(String email, int size, String deflt) {
-		return "http://www.gravatar.com/avatar/" + md5Hex(email) + ".jpg?s="
-				+ size + "&d=" + deflt;
+		return "http://www.gravatar.com/avatar/" + HashUtil.md5Hex(email)
+				+ ".jpg?s=" + size + "&d=" + deflt;
 	}
 
 	/**

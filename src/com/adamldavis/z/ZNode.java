@@ -44,6 +44,10 @@ public class ZNode implements Serializable {
 	private final List<ZNode> submodules = new ArrayList<ZNode>();
 	private long lastModified = System.currentTimeMillis();
 
+	private int lineNumber = 0; // only for things in files, like functions
+	private ZNode parentNode; // null if no parent
+	private int originalSize = 0;
+
 	public ZNode() {
 		setLocation(new Point2D.Float(0, 0));
 	}
@@ -63,9 +67,16 @@ public class ZNode implements Serializable {
 		this.setNodeType(zNodeType);
 		this.setName(name);
 		setCode(code);
+		this.originalSize = this.code.size();
 		this.setExtension(extension);
 		this.lastModified = parentFile.lastModified();
 		this.setParentFile(parentFile);
+	}
+
+	public ZNode(ZNodeType zNodeType, String name, String code, int lineNumber,
+			File parentFile) {
+		this(zNodeType, name, code, "", parentFile);
+		this.lineNumber = lineNumber;
 	}
 
 	/** Is code empty? */
@@ -218,6 +229,26 @@ public class ZNode implements Serializable {
 			}
 		}
 		return hasTodo;
+	}
+
+	public int getLineNumber() {
+		return lineNumber;
+	}
+
+	public void setLineNumber(int lineNumber) {
+		this.lineNumber = lineNumber;
+	}
+
+	public ZNode getParentNode() {
+		return parentNode;
+	}
+
+	public void setParentNode(ZNode parentNode) {
+		this.parentNode = parentNode;
+	}
+
+	public int getOriginalSize() {
+		return originalSize;
 	}
 
 }

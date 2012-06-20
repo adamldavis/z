@@ -5,7 +5,6 @@ import static java.lang.Math.round;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Font;
-import java.awt.GradientPaint;
 import java.awt.Graphics2D;
 import java.awt.Point;
 
@@ -122,9 +121,12 @@ public class ZNodePainter extends Graphics2DPainter implements Painter {
 			Point point2 = new Point(x + isize, y + isize / 2);
 			final float codeSize = Math.max(size * 1 / 12, 5);
 			g2d.setFont(new Font(Font.MONOSPACED, Font.PLAIN, round(codeSize)));
-			g2d.setPaint(new GradientPaint(x, y, hsvColor.darker(), point2.x,
-					point2.y, Color.BLACK));
-			// g2d.setColor(g2d.getBackground());
+			Color background = colorManager
+					.getColorFor(ColorSetting.BACKGROUND);
+			// g2d.setPaint(new GradientPaint(x, y, colorManager
+			// .getColorFor(ColorSetting.HOVER), point2.x, point2.y,
+			// background));
+			g2d.setColor(background);
 			int i = 1;
 			for (String line : node.getCodeLines()) {
 				g2d.drawString(

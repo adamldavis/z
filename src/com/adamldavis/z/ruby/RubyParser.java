@@ -135,8 +135,8 @@ public class RubyParser implements LanguageParser, Compiler {
 				if (methods != null) {
 					data.code.append(line).append('\n');
 					methods.add(new ZNode(ZNodeType.METHOD, data.methodName,
-							data.code.toString(), data.methodStartLine + "-"
-									+ data.n, data.file));
+							data.code.toString(), data.methodStartLine,
+							data.file));
 				}
 				return;
 			}

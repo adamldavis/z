@@ -12,7 +12,6 @@ import org.slf4j.LoggerFactory;
 import com.adamldavis.z.ZCodeSaver;
 import com.adamldavis.z.ZNode;
 import com.adamldavis.z.api.APIFactory;
-import com.adamldavis.z.api.ColorMode;
 
 public class ZCodeEditor extends EditorAdapter {
 
@@ -30,7 +29,6 @@ public class ZCodeEditor extends EditorAdapter {
 	public ZCodeEditor(ZNode zNode, APIFactory apiFactory) {
 		super();
 		panel = getEditorPanel();
-		applyColorMode(ColorMode.BLACK);
 		setText(apiFactory.getCodeFormatter().format(zNode.getCode()));
 		this.zNode = zNode;
 		this.apiFactory = apiFactory;

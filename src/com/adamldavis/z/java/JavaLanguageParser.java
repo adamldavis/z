@@ -124,7 +124,7 @@ public class JavaLanguageParser implements LanguageParser {
 							}
 							method.replaceCode(code.append(line)
 									.substring(start).toString());
-							method.setExtension(methodStart + "-" + lineNumber);
+							method.setLineNumber(methodStart);
 							inMethod = false;
 						}
 						code.setLength(0);

@@ -208,6 +208,7 @@ public class ZCodeLoader {
 
 			for (ZNode method : methods) {
 				method.setParentFile(file);
+				method.setParentNode(node);
 			}
 			node.getSubmodules().addAll(methods);
 			node.getDependencies().clear();

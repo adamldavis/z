@@ -4,13 +4,15 @@ import java.io.File;
 
 import javax.swing.JPanel;
 
+import com.adamldavis.z.gui.ColorManager;
+
 public interface Editor {
 
 	/** Opens a new window with given file. */
 	JPanel open(File f) throws Exception;
 
-	/** Applies the given color mode. */
-	void applyColorMode(ColorMode mode);
+	/** Applies the given color manager. */
+	void applyColor(ColorManager colorManager);
 
 	/** Gets the panel containing the editor. */
 	JPanel getEditorPanel();

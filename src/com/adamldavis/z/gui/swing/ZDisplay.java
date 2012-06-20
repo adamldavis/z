@@ -59,6 +59,8 @@ public class ZDisplay extends Display2d {
 	 */
 	@Override
 	protected void paintBuffered(Graphics2D g2d) {
+		if (z.getZNodes() == null)
+			return;
 		final List<ZNode> zNodes = new LinkedList<ZNode>(z.getZNodes());
 		final Point point1 = z.getPoint1();
 		final Point point2 = z.getPoint2();
@@ -119,7 +121,7 @@ public class ZDisplay extends Display2d {
 		g2d.setStroke(new BasicStroke(2.0f));
 		for (ZNodeLink link : links) {
 			g2d.setPaint(new GradientPaint(link.getNode1().getLocation(),
-					hoverColor, link.getNode2().getLocation(), lineColor));
+					Color.YELLOW, link.getNode2().getLocation(), lineColor));
 			g2d.drawLine((int) link.getNode1().getLocation().getX(), (int) link
 					.getNode1().getLocation().getY(), (int) link.getNode2()
 					.getLocation().getX(), (int) link.getNode2().getLocation()
@@ -155,6 +157,14 @@ public class ZDisplay extends Display2d {
 		} catch (URISyntaxException e) {
 			log.error(e.getMessage());
 		}
+	}
+
+	public void start() {
+		timer.start();
+	}
+
+	public void stop() {
+		timer.stop();
 	}
 
 }

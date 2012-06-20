@@ -18,11 +18,12 @@ import org.yaml.snakeyaml.Yaml;
  * Uses yaml to load colors from color.yml.
  * 
  * @author Adam L. Davis
- * 
  */
 public class ColorManager {
 
-	static final String filename = "color.yml";
+	public static final String COLORS = "colors/";
+
+	private String filename = COLORS + "colors1.yml";
 
 	final Map<String, String> colors = new HashMap<String, String>();
 
@@ -46,6 +47,14 @@ public class ColorManager {
 		}
 	}
 
+	public String getFilename() {
+		return filename;
+	}
+
+	public void setFilename(String filename) {
+		this.filename = filename;
+	}
+
 	public static void main(String[] args) {
 		Yaml yaml = new Yaml();
 		final Map<String, String> colors = new HashMap<String, String>();
@@ -60,7 +69,7 @@ public class ColorManager {
 		colors.put(ColorSetting.TASK.name(), "#008500");
 		colors.put(ColorSetting.SELECTED_TASK.name(), "#67E667");
 		try {
-			FileWriter fw = new FileWriter(filename);
+			FileWriter fw = new FileWriter("color.yml");
 			yaml.dump(colors, fw);
 			fw.flush();
 			fw.close();
