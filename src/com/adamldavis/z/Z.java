@@ -57,7 +57,6 @@ import com.adamldavis.z.gui.ZMenu;
 import com.adamldavis.z.gui.swing.ZDisplay;
 import com.adamldavis.z.tasks.ZTask;
 import com.adamldavis.z.tasks.ZTaskList;
-import com.adamldavis.z.util.ThreadingUtil;
 
 /**
  * Main class of Z program.
@@ -908,7 +907,7 @@ public class Z implements MouseListener, MouseWheelListener,
 		editor.setScale(0.25f);
 		state = State.SELECTING;
 		aniCount.set(10);
-		ThreadingUtil.runAsThread(new Runnable() {
+		new Thread(new Runnable() {
 			@Override
 			public void run() {
 				display.stop();
@@ -917,7 +916,7 @@ public class Z implements MouseListener, MouseWheelListener,
 				scrollPane.doLayout();
 				pane.doLayout();
 			}
-		});
+		}).start();
 	}
 
 	private void sortNodes() {
