@@ -1,0 +1,55 @@
+package com.adamldavis.z.util;
+
+import static org.junit.Assert.assertEquals;
+
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+
+import org.junit.Test;
+
+import com.adamldavis.z.util.ThreadingUtil.Finder;
+
+public class ThreadingUtilTest {
+
+	Random rnd = new Random();
+
+	class ThreadContext {
+		public List<String> get() {
+			switch (rnd.nextInt(3)) {
+			case 0:
+				return Arrays.asList("zzz"); // no matches.
+			case 1:
+				return Arrays.asList("aa1"); // a matches
+			default:
+				return Arrays.asList("ab1", "ac1"); // b and c
+			}
+
+		}
+	}
+
+	@Test
+	public void testMultiThreadedFind() {
+		Collection<String> find = Arrays.asList("a", "b", "c");
+		Finder<String, String, ThreadContext> finder = new Finder<String, String, ThreadingUtilTest.ThreadContext>() {
+			@Override
+			public String find(String searchObject, ThreadContext context) {
+				for (String s : context.get()) {
+					if (s.contains(searchObject))
+						return s;
+				}
+				return null;
+			}
+		};
+		ThreadContext context = new ThreadContext();
+		Map<String, String> map = ThreadingUtil.multiThreadedFind(find, finder,
+				context);
+		assertEquals("aa1", map.get("a"));
+		assertEquals("ab1", map.get("b"));
+		assertEquals("ac1", map.get("c"));
+		System.out.println("map=" + map);
+	}
+
+}
