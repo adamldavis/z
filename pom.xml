@@ -4,7 +4,7 @@
     <name>Zeta Code</name>
     <artifactId>z</artifactId>
     <groupId>com.adamldavis</groupId>
-    <version>0.2-beta-1</version>
+    <version>0.3.0</version>
     <url>http://adamldavis.com</url>
     <modelVersion>4.0.0</modelVersion>
     <organization>
@@ -25,13 +25,13 @@
         <sourceDirectory>src</sourceDirectory>
         <testSourceDirectory>test</testSourceDirectory>
         <plugins>
-        	<plugin>
-        		<artifactId>maven-compiler-plugin</artifactId>
-        		<configuration>
+            <plugin>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
                     <source>1.6</source>
                     <target>1.6</target>
                 </configuration>
-        	</plugin>
+            </plugin>
             <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
                 <version>2.3</version>
@@ -134,9 +134,9 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-        	<groupId>org.yaml</groupId>
-        	<artifactId>snakeyaml</artifactId>
-        	<version>1.8</version>
+            <groupId>org.yaml</groupId>
+            <artifactId>snakeyaml</artifactId>
+            <version>1.8</version>
         </dependency>
     </dependencies>
 </project>
