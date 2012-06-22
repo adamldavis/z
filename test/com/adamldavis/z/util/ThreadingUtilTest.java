@@ -10,13 +10,14 @@ import java.util.Random;
 
 import org.junit.Test;
 
+import com.adamldavis.z.util.ThreadingUtil.FindContext;
 import com.adamldavis.z.util.ThreadingUtil.Finder;
 
 public class ThreadingUtilTest {
 
 	Random rnd = new Random();
 
-	class ThreadContext {
+	class ThreadContext implements FindContext {
 		public List<String> get() {
 			switch (rnd.nextInt(3)) {
 			case 0:
@@ -27,6 +28,11 @@ public class ThreadingUtilTest {
 				return Arrays.asList("ab1", "ac1"); // b and c
 			}
 
+		}
+
+		@Override
+		public boolean isDone() {
+			return false;
 		}
 	}
 
