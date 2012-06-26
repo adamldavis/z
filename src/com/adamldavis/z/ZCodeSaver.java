@@ -102,6 +102,10 @@ public class ZCodeSaver {
 			break;
 		case MODULE:
 		case DEPENDENCY:
+			if (dependencyManager == null) {
+				// this is probably a text-file
+				save(zNode.getParentFile(), zNode.getCodeLines());
+			}
 			if (!zNode.isCodeEmpty()) {
 				dependencyManager.save(zNode);
 			}

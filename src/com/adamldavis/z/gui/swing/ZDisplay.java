@@ -2,9 +2,9 @@
 package com.adamldavis.z.gui.swing;
 
 import java.awt.BasicStroke;
+import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.FlowLayout;
 import java.awt.GradientPaint;
 import java.awt.Graphics2D;
 import java.awt.Point;
@@ -49,7 +49,7 @@ public class ZDisplay extends Display2d {
 		this.z = z;
 		this.getContentPane().setBackground(
 				colorManager.getColorFor(ColorSetting.BACKGROUND));
-		this.getContentPane().setLayout(new FlowLayout(FlowLayout.LEFT));
+		this.getContentPane().setLayout(new BorderLayout());
 	}
 
 	/*
@@ -78,6 +78,8 @@ public class ZDisplay extends Display2d {
 		Color lineColor = colorManager.getColorFor(ColorSetting.LINE);
 		final Painter nodePainter = new ZNodePainter(g2d, z.getScale(),
 				lineColor);
+		final Painter grayPainter = new ZNodePainter(g2d, z.getScale(),
+				Color.GRAY);
 		Color hoverColor = colorManager.getColorFor(ColorSetting.HOVER);
 		final Painter hoverPainter = new ZNodePainter(g2d, z.getScale(),
 				hoverColor);
@@ -90,13 +92,18 @@ public class ZDisplay extends Display2d {
 		final List<ZNodeLink> links = new LinkedList<ZNodeLink>(z.getLinks());
 
 		for (ZNode node : zNodes) {
+			if (z.getTaskList().getActiveTask() != null) {
+				if (z.getTaskList().getActiveTask().contains(node)) {
+					taskNodePainter.paint(node);
+				} else {
+					grayPainter.paint(node);
+				}
+				continue;
+			}
 			if (node == z.getSelectedNode() && links.isEmpty()) {
 				selNodePainter.paint(node);
 			} else if (node == z.getHoveredNode()) {
 				hoverPainter.paint(node);
-			} else if (z.getTaskList().getActiveTask() != null
-					&& z.getTaskList().getActiveTask().contains(node)) {
-				taskNodePainter.paint(node);
 			} else {
 				nodePainter.paint(node);
 			}

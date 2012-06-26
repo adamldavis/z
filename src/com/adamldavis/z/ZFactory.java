@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 
 import com.adamldavis.z.api.APIFactory;
 import com.adamldavis.z.api.CodeFormatter;
+import com.adamldavis.z.api.DefaultApiFactory;
 import com.adamldavis.z.api.DependencyManager;
 import com.adamldavis.z.api.LanguageParser;
 
@@ -94,8 +95,21 @@ public class ZFactory {
 		return null;
 	}
 
+	/**
+	 * Looks for a source-code file (e.g. Main.java) in the given directory or
+	 * or any sub-directories (or the parent-directory of the given file).
+	 * 
+	 * @param file
+	 *            file or directory of project.
+	 * @return DefaultApiFactory if no languages were matched.
+	 */
 	public APIFactory getApiFactory(File file) {
-		return getApiFactory(file, 0);
+		APIFactory factory = getApiFactory(file, 0);
+
+		if (factory == null) {
+			return new DefaultApiFactory();
+		}
+		return factory;
 	}
 
 	public APIFactory getApiFactory(File file, int depth) {

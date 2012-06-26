@@ -3,11 +3,8 @@ package com.adamldavis.z;
 
 import static java.util.Arrays.asList;
 
-import java.awt.BorderLayout;
-import java.awt.Container;
 import java.awt.Cursor;
 import java.awt.Dimension;
-import java.awt.FlowLayout;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -26,7 +23,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Timer;
@@ -36,8 +32,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.swing.JPanel;
-import javax.swing.JScrollPane;
 import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,10 +45,8 @@ import com.adamldavis.z.ZNodeLink.LinkType;
 import com.adamldavis.z.api.APIFactory;
 import com.adamldavis.z.api.Editor;
 import com.adamldavis.z.editor.ZCodeEditor;
-import com.adamldavis.z.editor.ZCodeEditorPlus;
+import com.adamldavis.z.editor.ZEdit;
 import com.adamldavis.z.git.GitLogDiffsMap;
-import com.adamldavis.z.gui.ColorManager;
-import com.adamldavis.z.gui.ColorSetting;
 import com.adamldavis.z.gui.ZMenu;
 import com.adamldavis.z.gui.swing.ZDisplay;
 import com.adamldavis.z.tasks.ZTask;
@@ -111,8 +105,6 @@ public class Z implements MouseListener, MouseWheelListener,
 
 	ZNode draggedNode;
 
-	final List<Editor> editors = new LinkedList<Editor>();
-
 	SortOrder order = SortOrder.DEFAULT;
 
 	UserSettings settings = new UserSettings();
@@ -168,6 +160,8 @@ public class Z implements MouseListener, MouseWheelListener,
 
 	public GitLogDiffsMap diffsMap;
 
+	private ZEdit edit = new ZEdit();
+
 	public Z() {
 		addListeners();
 		zfactory = new ZFactory(Z.class.getResourceAsStream("z.properties"));
@@ -178,6 +172,12 @@ public class Z implements MouseListener, MouseWheelListener,
 				Z.this.run();
 			}
 		}, 33, 33);
+		try {
+			UIManager.setLookAndFeel(UIManager
+					.getCrossPlatformLookAndFeelClassName());
+		} catch (Exception e) {
+			log.error(e.getMessage(), e);
+		}
 	}
 
 	private void addListeners() {
@@ -441,10 +441,6 @@ public class Z implements MouseListener, MouseWheelListener,
 		return draggedNode;
 	}
 
-	public List<Editor> getEditors() {
-		return editors;
-	}
-
 	public ZNode getHoveredNode() {
 		return hoveredNode;
 	}
@@ -518,6 +514,19 @@ public class Z implements MouseListener, MouseWheelListener,
 		if (!links.isEmpty())
 			return;
 		switch (e.getKeyChar()) {
+		case 's':
+			// TODO: Search!!!!
+			String name = display.showInputDialog("Search", "Z");
+			ZTask activeTask = taskList.getActiveTask();
+			for (ZNode node : getZNodes()) {
+				if (node.getName().startsWith(name)) {
+					log.info("found {}", node.getName());
+					if (activeTask != null) {
+						activeTask.add(node);
+					}
+				}
+			}
+			break;
 		case 'm':
 			if (selectedNode.getNodeType() == ZNodeType.CLASS) {
 				addMethodLinks();
@@ -588,7 +597,10 @@ public class Z implements MouseListener, MouseWheelListener,
 				activateMenu(e);
 			} else if (p.y >= display.getHeight() - 40) {
 				final ZTask task = taskList.getTaskAt(p.x, 20);
-				selectTask(task);
+				if (task == null)
+					showNewEditor(selectedNode);
+				else
+					selectTask(task);
 			} else if (selectedNode == null) {
 				selectedNode = createNewZ(p, ZNodeType.MODULE);
 			} else {
@@ -690,8 +702,8 @@ public class Z implements MouseListener, MouseWheelListener,
 				scale *= 2f;
 			}
 			log.debug("Scale:" + scale);
-			if (!editors.isEmpty()) {
-				for (Editor editor : editors) {
+			if (!edit.getEditors().isEmpty()) {
+				for (Editor editor : edit.getEditors()) {
 					editor.setScale(scale);
 				}
 			}
@@ -707,10 +719,12 @@ public class Z implements MouseListener, MouseWheelListener,
 				state = State.NORMAL;
 				links.clear();
 			} else if (state == State.SELECTING) {
-				if (editors.isEmpty()) {
+				if (edit.getEditors().isEmpty()) {
 					state = State.NORMAL;
 				} else {
 					state = State.EDITING;
+					updateEditorSize(edit.getEditors().get(0));
+					edit.updatePaneSize();
 				}
 			}
 		}
@@ -721,14 +735,18 @@ public class Z implements MouseListener, MouseWheelListener,
 		final float time = aniCount.get() / 100f;
 
 		if (getState() == State.SELECTING) {
-			Editor ed = getEditors().get(0);
-			int y = 8 + (editors.size() == 1 ? 0 : editors.get(1)
-					.getEditorPanel().getY()
-					+ editors.get(1).getEditorPanel().getHeight());
+			Editor ed = edit.getEditors().get(0);
+			ZNode editorNode = edit.getNode(ed);
+			Editor previousEd = edit.getEditors().size() == 1 ? null : edit
+					.getEditors().get(1);
+			int y = 8;
+			if (previousEd != null) {
+				JPanel previousPanel = previousEd.getEditorPanel();
+				y += previousPanel.getY() + previousPanel.getHeight();
+			}
 			ed.setScale(0.25f + 0.75f * time);
-			final Point2D point = animator.animate(getSelectedNode()
-					.getLocation(), new Point2D.Float(8, y), time,
-					AnimationType.COSINE);
+			final Point2D point = animator.animate(editorNode.getLocation(),
+					new Point2D.Float(8, y), time, AnimationType.COSINE);
 			ed.getEditorPanel().setLocation((int) point.getX(),
 					(int) point.getY());
 		} else if (getState() == State.ANIMATING)
@@ -774,6 +792,13 @@ public class Z implements MouseListener, MouseWheelListener,
 		}
 	}
 
+	private void updateEditorSize(Editor editor) {
+		ZNode editorNode = edit.getNode(editor);
+		int width = display.getWidth() - 50;
+		int height = 50 + editorNode.getCodeLineSize() * 14;
+		editor.getEditorPanel().setPreferredSize(new Dimension(width, height));
+	}
+
 	public void saveSettings() {
 		settings.setProperty(UserSettings.DIRECTION, direction.toString());
 		settings.setProperty(UserSettings.LAYOUT, nodeLayout.toString());
@@ -786,7 +811,7 @@ public class Z implements MouseListener, MouseWheelListener,
 			taskList.setActiveTask(null);
 			clicked(selectedNode);
 			return;
-		} else if (task != null) {
+		} else {
 			taskList.setActiveTask(task);
 		}
 		if (task.getNodes().isEmpty()) {
@@ -819,32 +844,29 @@ public class Z implements MouseListener, MouseWheelListener,
 		this.state = state;
 	}
 
-	final Container pane = new JPanel(new FlowLayout(FlowLayout.LEFT));
-
 	public void showNewEditor(final ZNode z) {
 		removeListeners();
-		final ZCodeEditor editor = z.getNodeType() == ZNodeType.METHOD ? new ZCodeEditorPlus(
-				z, apiFactory) : new ZCodeEditor(z, apiFactory);
-		final JScrollPane scrollPane = new JScrollPane(pane);
-		pane.setMaximumSize(new Dimension(display.getWidth(), Integer.MAX_VALUE));
-		display.getContentPane().setLayout(new BorderLayout());
-		display.getContentPane().add(scrollPane);
-		pane.setBackground(new ColorManager()
-				.getColorFor(ColorSetting.BACKGROUND));
+		final Editor editor = edit.getEditorFor(z, apiFactory);
+		display.getContentPane().add(edit.getScrollPane());
+		edit.getPane().setMaximumSize(
+				new Dimension(display.getWidth(), Integer.MAX_VALUE));
 
 		final KeyListener keyAdapter = new KeyListener() {
 
 			@Override
 			public void keyPressed(KeyEvent e) {
 				if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
-					endEditing(editor, pane, scrollPane);
+					endEditing();
 				} else if (e.getKeyCode() == KeyEvent.VK_S && e.isControlDown()) {
-					editor.save();
+					((ZCodeEditor) editor).save();
 				} else if (e.getKeyCode() == KeyEvent.VK_W && e.isControlDown()) {
 					// close just this editor.
-					editors.remove(editor);
-					pane.remove(editor.getEditorPanel());
+					edit.remove(editor);
+					edit.getPane().remove(editor.getEditorPanel());
 					display.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+					if (edit.getEditors().isEmpty()) {
+						endEditing();
+					}
 				} else if (e.getKeyCode() == KeyEvent.VK_F1) {
 					try {
 						display.showEditorHelp();
@@ -853,19 +875,6 @@ public class Z implements MouseListener, MouseWheelListener,
 					}
 					display.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
 				}
-			}
-
-			private void endEditing(final ZCodeEditor editor,
-					final Container pane, final JScrollPane scrollPane) {
-				editor.save();
-				for (Editor ed : editors)
-					pane.remove(ed.getEditorPanel());
-
-				state = State.NORMAL;
-				display.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
-				addListeners();
-				display.start();
-				display.getContentPane().remove(scrollPane);
 			}
 
 			@Override
@@ -882,42 +891,40 @@ public class Z implements MouseListener, MouseWheelListener,
 								Thread.sleep(100); // 1/10 second
 							} catch (InterruptedException e) {
 							}
-							editor.save();
+							((ZCodeEditor) editor).save();
 							Swutil.flashMessage(display, "Saved " + z.getName());
 						}
 					});
 				}
 			}
 		};
-		editor.addKeyListener(keyAdapter);
-		editors.add(0, editor);
+		((ZCodeEditor) editor).addKeyListener(keyAdapter);
 		final int size = (int) z.getSize();
-		editor.getEditorPanel().setSize(new Dimension(size, size));
-		int maxW = 0, maxH = 0;
-		for (Editor ed : editors) {
-			maxW = Math.max(ed.getEditorPanel().getX()
-					+ ed.getEditorPanel().getWidth(), maxW);
-			maxH = Math.max(ed.getEditorPanel().getY()
-					+ ed.getEditorPanel().getHeight(), maxH);
-			pane.add(ed.getEditorPanel());
-		}
-		pane.setPreferredSize(new Dimension(maxW, maxH));
-
+		editor.getEditorPanel().setSize(new Dimension(2 * size, size));
 		editor.getEditorPanel().setLocation((int) z.getLocation().x - size / 2,
 				(int) z.getLocation().y - size / 2);
 		editor.setScale(0.25f);
 		state = State.SELECTING;
 		aniCount.set(10);
+		edit.updatePaneSize();
 		ThreadingUtil.runAsThread(new Runnable() {
 			@Override
 			public void run() {
-				display.stop();
+				// display.stop();
 				display.doLayout();
 				display.getContentPane().doLayout();
-				scrollPane.doLayout();
-				pane.doLayout();
+				edit.getScrollPane().doLayout();
+				// edit.getPane().doLayout();
 			}
 		});
+	}
+
+	private void endEditing() {
+		setState(State.NORMAL);
+		display.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+		addListeners();
+		// display.start();
+		display.getContentPane().remove(edit.getScrollPane());
 	}
 
 	private void sortNodes() {

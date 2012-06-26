@@ -53,7 +53,7 @@ public class ZCodeLoader {
 
 	public ZNode load(File file) {
 		if (file.isFile()) {
-			if (file.getName().equals(dependencyManager.getStandardFileName())) {
+			if (file.getName().equals(getDependencyMgrFilename())) {
 				List<ZNode> deps = dependencyManager.getDependencies(file);
 
 				ZNode node = new ZNode(ZNodeType.MODULE,
@@ -94,8 +94,7 @@ public class ZCodeLoader {
 
 			for (File f : file.listFiles()) {
 				if (f.isFile()
-						&& f.getName().equals(
-								dependencyManager.getStandardFileName())) {
+						&& f.getName().equals(getDependencyMgrFilename())) {
 					return load(f);
 				}
 			}
@@ -103,6 +102,11 @@ public class ZCodeLoader {
 			return loadDir(file);
 		}
 		throw new IllegalArgumentException("Unknown file type: " + file);
+	}
+
+	private String getDependencyMgrFilename() {
+		return dependencyManager == null ? null : dependencyManager
+				.getStandardFileName();
 	}
 
 	private ZNode loadPlainFile(File file, boolean read) {
@@ -216,7 +220,7 @@ public class ZCodeLoader {
 			break;
 		case MODULE:
 			File depFile = new File(node.getParentFile(),
-					dependencyManager.getStandardFileName());
+					getDependencyMgrFilename());
 			if (depFile.isFile()) {
 				return load(depFile);
 			} else {

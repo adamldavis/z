@@ -154,6 +154,9 @@ public class ZNode implements Serializable {
 
 	public void setParentFile(File parentFile) {
 		this.parentFile = parentFile;
+		if (parentFile != null) {
+			this.lastModified = parentFile.lastModified();
+		}
 	}
 
 	public File getParentFile() {
