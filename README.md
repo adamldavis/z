@@ -1,13 +1,16 @@
 Zeta Code
 ========================
 
-Go from a 10,000 ft view of the entire project down to any file simply by zooming. Zeta Code is a [ZUI](https://en.wikipedia.org/wiki/Zooming_User_Interface) for programmers.
+Go from a 10,000 ft view of the entire project down to any file or method.
+Zeta Code is a [ZUI](https://en.wikipedia.org/wiki/Zooming_User_Interface).
+Zeta Code is a way to view code as a graph.
+It does not mean to replace traditional IDE's, but rather is
+a different way to view and manipulate code.
+It looks at a project holistically - including imports and dependencies
+as top-level objects and breaks out of the ancient code-as-files metaphor.
 ![https://p.twimg.com/AvwpduGCIAAC0Qa.png:large](https://p.twimg.com/AvwpduGCIAAC0Qa.png:large)
 
-Languages/Frameworks Supported: Java/Maven, Ruby/Gems
-
-* Java/Maven: Tested on itself
-* Ruby/Gems: Tested on the Rails project
+Languages/Frameworks Supported: Java/Maven, Groovy scripting
 
 Features
 --------
@@ -19,6 +22,7 @@ Features
 * Time-Travel: gource-like animation of commit history (git)
 * Neo-Edit Editor with syntax highlighting and many other features
 * Press F6 in editor for runtime-debugging
+* Playground: immediately evaluating groovy
 
 Future Plans
 ------------
