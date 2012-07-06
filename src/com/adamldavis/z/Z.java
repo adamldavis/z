@@ -920,7 +920,7 @@ public class Z implements MouseListener, MouseWheelListener,
 				edit.getScrollPane().doLayout();
 				// edit.getPane().doLayout();
 			}
-		});
+		}).start();
 	}
 
 	private void endEditing() {
