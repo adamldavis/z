@@ -171,9 +171,23 @@ public class ZMenu extends MouseAdapter implements MouseMotionListener,
 		final Menu actions = new Menu("Actions");
 		final MenuItem up = makeItemGoUp(z, actionListener);
 		final MenuItem time = makeItemTimeTravel(z, actionListener);
+		final MenuItem play = makeItemPlay(z, actionListener);
 		actions.add(up);
 		actions.add(time);
+		actions.add(play);
 		return actions;
+	}
+
+	private MenuItem makeItemPlay(final Z z, final ActionListener actionListener) {
+		final MenuItem item = new MenuItem("Playground");
+		item.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				z.showPlayground();
+				actionListener.actionPerformed(e);
+			}
+		});
+		return item;
 	}
 
 	private MenuItem makeItemTimeTravel(final Z z,

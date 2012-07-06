@@ -3,11 +3,14 @@ package com.adamldavis.z;
 
 import static java.util.Arrays.asList;
 
+import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Point;
+import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
@@ -44,6 +47,7 @@ import com.adamldavis.z.ZNode.ZNodeType;
 import com.adamldavis.z.ZNodeLink.LinkType;
 import com.adamldavis.z.api.APIFactory;
 import com.adamldavis.z.api.Editor;
+import com.adamldavis.z.editor.Playground;
 import com.adamldavis.z.editor.ZCodeEditor;
 import com.adamldavis.z.editor.ZEdit;
 import com.adamldavis.z.git.GitLogDiffsMap;
@@ -985,4 +989,30 @@ public class Z implements MouseListener, MouseWheelListener,
 					dep.setLocation((java.awt.geom.Point2D.Float) map.get(dep));
 			}
 	}
+
+	public void showPlayground() {
+		state = State.EDITING;
+		Playground pg = Playground.builder(apiFactory).build(
+				display.getContentPane());
+		removeListeners();
+		display.stop();
+		display.doLayout();
+		display.setSize(Toolkit.getDefaultToolkit().getScreenSize());
+		display.getContentPane().invalidate();
+		display.getContentPane().repaint();
+		pg.getLeft().setText("// type Groovy code here. Press Esc when done");
+		pg.getRight().getEditorPanel().setBackground(Color.white);
+		pg.getLeft().addKeyListener(new KeyAdapter() {
+			@Override
+			public void keyPressed(KeyEvent e) {
+				if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
+					state = State.NORMAL;
+					display.getContentPane().removeAll();
+					display.start();
+					addListeners();
+				}
+			}
+		});
+	}
+
 }

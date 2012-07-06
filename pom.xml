@@ -4,7 +4,7 @@
     <name>Zeta Code</name>
     <artifactId>z</artifactId>
     <groupId>com.adamldavis</groupId>
-    <version>0.3.0</version>
+    <version>0.3.1</version>
     <url>http://adamldavis.com</url>
     <modelVersion>4.0.0</modelVersion>
     <organization>
@@ -137,6 +137,11 @@
             <groupId>org.yaml</groupId>
             <artifactId>snakeyaml</artifactId>
             <version>1.8</version>
+        </dependency>
+        <dependency>
+        	<groupId>org.codehaus.groovy</groupId>
+        	<artifactId>groovy-all</artifactId>
+        	<version>1.7.10</version>
         </dependency>
     </dependencies>
 </project>
