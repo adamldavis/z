@@ -8,6 +8,15 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+import com.google.common.base.Function;
+import com.google.common.collect.Lists;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.ListenableFutureTask;
 
 /**
  * Helpful methods for doing the dirty work of multithreading.
@@ -93,6 +102,32 @@ public class ThreadingUtil {
 			}
 		}
 		return map;
+	}
+
+	public static <T, R> ListenableFuture<List<R>> parallelTransform(
+			Collection<T> input, final Function<T, R> function) {
+		final ExecutorService pool = Executors.newCachedThreadPool();
+		return parallelTransform(input, function, pool);
+	}
+
+	public static <T, R> ListenableFuture<List<R>> parallelTransform(
+			Collection<T> input, final Function<T, R> function,
+			final ExecutorService pool) {
+
+		final List<ListenableFuture<R>> futures = Lists.newLinkedList();
+		// make futures
+		for (final T in : input) {
+			ListenableFutureTask<R> task = ListenableFutureTask
+					.create(new Callable<R>() {
+						@Override
+						public R call() throws Exception {
+							return function.apply(in);
+						}
+					});
+			pool.submit(task);
+			futures.add(task);
+		}
+		return Futures.successfulAsList(futures);
 	}
 
 	/** runs as a daemon (will not keep JVM running). */

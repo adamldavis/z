@@ -5,6 +5,8 @@ import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
+import com.google.common.hash.Hashing;
+
 /**
  * @author Adam L. Davis
  * 
@@ -41,6 +43,14 @@ public class HashUtil {
 		} catch (UnsupportedEncodingException e) {
 			throw new RuntimeException(e);
 		}
+	}
+
+	public static String sha256Hex(String message) {
+		return hex(Hashing.sha256().hashString(message).asBytes());
+	}
+
+	public static String sha512Hex(String message) {
+		return hex(Hashing.sha512().hashString(message).asBytes());
 	}
 
 	public static void main(String[] args) {

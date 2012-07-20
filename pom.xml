@@ -4,7 +4,7 @@
     <name>Zeta Code</name>
     <artifactId>z</artifactId>
     <groupId>com.adamldavis</groupId>
-    <version>0.3.1</version>
+    <version>0.3.2</version>
     <url>http://adamldavis.com</url>
     <modelVersion>4.0.0</modelVersion>
     <organization>
@@ -17,9 +17,6 @@
                 <includes>
                     <include>**/*.*</include>
                 </includes>
-                <excludes>
-                    <exclude>*.java</exclude>
-                </excludes>
             </resource>
         </resources>
         <sourceDirectory>src</sourceDirectory>
@@ -142,6 +139,11 @@
         	<groupId>org.codehaus.groovy</groupId>
         	<artifactId>groovy-all</artifactId>
         	<version>1.7.10</version>
+        </dependency>
+        <dependency>
+        	<groupId>com.google.guava</groupId>
+        	<artifactId>guava</artifactId>
+        	<version>11.0.1</version>
         </dependency>
     </dependencies>
 </project>
