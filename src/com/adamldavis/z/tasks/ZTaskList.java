@@ -13,19 +13,12 @@ public class ZTaskList implements Serializable {
 
 	private static final long serialVersionUID = 42L;
 
-	private ZTask task1, task2;
-
 	private final List<ZTask> tasks = new LinkedList<ZTask>();
 
 	private ZTask activeTask;
 
 	public ZTaskList() {
-		// TODO: remove
-		task1 = new ZTask("Fix Tasks");
-		task2 = new ZTask("Fix Editor");
-		tasks.add(task1);
-		tasks.add(task2);
-		activeTask = task1;
+		tasks.add(new ZTask("Task"));
 	}
 
 	public void clear() {
