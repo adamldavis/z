@@ -21,22 +21,18 @@ Features
 * Choose any directionality: left-right, down, up, right-left
 * Time-Travel: gource-like animation of commit history (git)
 * Neo-Edit Editor with syntax highlighting and many other features
-* Press F6 in editor for runtime-debugging
 * Playground: immediately evaluating groovy
+* Zoom-in/out using the mouse-wheel
 
 Future Plans
 ------------
 * Support for more languages and frameworks
-* Zoom-in/out using the mouse-wheel
+* Data Visualization: change saturation based on number of callers of a function.
 * Tasks/Working-sets: ability to save a group of files and return to them at any time.
-* Dependencies: Easily manage your dependencies. See which code is using what, and easily search for existing open-source software.
 * History: Forward/Backward history.
-* Testing: Integration with modern testing frameworks like JUnit, TestNG, and spock.
 * Plugins: for version-control, compiling, testing, etc. It will be fully extensible.
-* Docs: ability to quickly see code-documentation by hovering, etc.
 * Call-heirarchy: see the methods called by current method.
 * Refactoring: ability to rename methods, move methods, etc.
-* Preview: show real values in real-time ("coding without blinders")
 
 Usage
 -----
