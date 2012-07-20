@@ -11,36 +11,36 @@ import java.util.regex.Pattern;
  */
 public class GitDiff {
 
-	private final File fileA, fileB;
+	private final File file;
+	private final String status; // M=modified, A=Added
 
 	private static final Pattern patt = Pattern
-			.compile("diff --git a/([\\w/\\.]+) b/([\\w/\\.]+)");
+			.compile("([MAD])\\s+([\\w/\\.\"]+)");
 
 	public static GitDiff newGitDiff(String line, File dir) {
 		Matcher matcher = patt.matcher(line);
 		if (!matcher.find()) {
 			return null;
 		}
-		return new GitDiff(new File(dir, matcher.group(1)), new File(dir,
-				matcher.group(2)));
+		return new GitDiff(new File(dir, matcher.group(2)), matcher.group(1));
 	}
 
-	public GitDiff(File fileA, File fileB) {
+	public GitDiff(File file, String status) {
 		super();
-		this.fileA = fileA;
-		this.fileB = fileB;
+		this.file = file;
+		this.status = status;
 	}
 
-	public File getFileA() {
-		return fileA;
-	}
-
-	public File getFileB() {
-		return fileB;
+	public File getFile() {
+		return file;
 	}
 
 	public static boolean isMatching(String line) {
 		return patt.matcher(line).matches();
+	}
+
+	public String getStatus() {
+		return status;
 	}
 
 }

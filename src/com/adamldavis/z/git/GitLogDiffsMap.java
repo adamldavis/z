@@ -94,8 +94,8 @@ public class GitLogDiffsMap implements Serializable {
 			throws IOException {
 		final List<GitDiff> diffs = new LinkedList<GitDiff>();
 		File temp = File.createTempFile("git_diff", ".out");
-		final String command = git + " diff " + gitLog.getId() + ".."
-				+ (gitLog2 == null ? "" : gitLog2.getId());
+		final String command = git + " diff --name-status " + gitLog.getId()
+				+ ".." + (gitLog2 == null ? "" : gitLog2.getId());
 		Process process = Runtime.getRuntime().exec(command, null,
 				currentDirectory);
 		FileUtils.copyInputStreamToFile(process.getInputStream(), temp);
@@ -152,9 +152,9 @@ public class GitLogDiffsMap implements Serializable {
 				gitDiffs.get(gitLog));
 
 		for (GitDiff diff : diffs) {
-			ZNode node = findZNode(diff.getFileA(), this.zNodes);
+			ZNode node = findZNode(diff.getFile(), this.zNodes);
 			if (node == null) {
-				log.warn("node {} not found", diff.getFileA().getAbsolutePath());
+				log.warn("node {} not found", diff.getFile().getAbsolutePath());
 			} else {
 				links.add(new ZNodeLink(author, node, LinkType.HAS_A));
 				// TODO: make a smooth animation
@@ -212,10 +212,9 @@ public class GitLogDiffsMap implements Serializable {
 		log.info("email={}", user.getEmail());
 	}
 
-	/** Removes nodes that are related to diffs. */
+	/** Removes nodes that were added by current diffs. */
 	public void removeDiffNodesFrom(List<ZNode> nodes) {
 		this.zNodes.addAll(nodes);
-		// TODO // remove all nodes associated with diffs:
 		final Set<ZNode> toRm = new HashSet<ZNode>();
 
 		for (GitLog gitLog : gitLogList) {
@@ -223,9 +222,11 @@ public class GitLogDiffsMap implements Serializable {
 					gitDiffs.get(gitLog));
 
 			for (GitDiff diff : diffs) {
-				ZNode node = findZNode(diff.getFileA(), nodes);
-				if (node != null)
-					toRm.add(node);
+				if ("A".equals(diff.getStatus())) {
+					ZNode node = findZNode(diff.getFile(), nodes);
+					if (node != null)
+						toRm.add(node);
+				}
 			}
 		}
 		nodes.removeAll(toRm);
