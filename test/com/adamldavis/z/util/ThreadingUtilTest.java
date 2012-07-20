@@ -25,7 +25,7 @@ public class ThreadingUtilTest {
 			case 1:
 				return Arrays.asList("aa1"); // a matches
 			default:
-				return Arrays.asList("ab1", "ac1"); // b and c
+				return Arrays.asList("b1", "c1"); // b and c
 			}
 
 		}
@@ -53,8 +53,8 @@ public class ThreadingUtilTest {
 		Map<String, String> map = ThreadingUtil.multiThreadedFind(find, finder,
 				context);
 		assertEquals("aa1", map.get("a"));
-		assertEquals("ab1", map.get("b"));
-		assertEquals("ac1", map.get("c"));
+		assertEquals("b1", map.get("b"));
+		assertEquals("c1", map.get("c"));
 		System.out.println("map=" + map);
 	}
 
